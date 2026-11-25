@@ -1537,6 +1537,57 @@ body.in-lab-mode .floating-controls {
   color: var(--text-dim);
 }
 
+/* Zone Indicators khi ở chế độ Puzzle */
+.lab-zone-indicators {
+  position: absolute;
+  top: 130px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  padding: 0 50px;
+  pointer-events: none;
+  z-index: 38;
+}
+
+.lab-zone-indicators.hidden {
+  display: none !important;
+}
+
+.zone-badge {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-full);
+  padding: 6px 20px;
+  color: #e2e8f0;
+  font-size: 11.5px;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4);
+}
+
+.zone-badge small {
+  font-size: 9.5px;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.zone-badge.zone-target {
+  border-color: rgba(16, 185, 129, 0.5);
+  color: #34d399;
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.25);
+}
+
+.zone-badge.zone-shelf {
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #38bdf8;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
+}
+
 /* Clue & Guide Card */
 .lab-clue-card {
   position: absolute;

@@ -1683,6 +1683,7 @@ function initAssemblyLab() {
       object: heartGroup,
       originPos: new THREE.Vector3(0, 0, 0),
       explodeOffset: new THREE.Vector3(0, 0, 0.4),
+      puzzleSidePos: new THREE.Vector3(9.5, -0.4, 0.4),
       color: 0xffb300,
       icon: 'fa-heart',
       badge: 'Trung tâm tuần hoàn',
@@ -1696,6 +1697,7 @@ function initAssemblyLab() {
       object: vPulmonaryArtery,
       originPos: new THREE.Vector3(0, 0, 0),
       explodeOffset: new THREE.Vector3(-3.2, 1.8, 1.2),
+      puzzleSidePos: new THREE.Vector3(9.5, 0.4, 0.5),
       color: 0x0088ff,
       icon: 'fa-arrow-up',
       badge: 'Vòng tuần hoàn nhỏ',
@@ -1709,6 +1711,7 @@ function initAssemblyLab() {
       object: lungCapillaries,
       originPos: new THREE.Vector3(0, 5.4, 0),
       explodeOffset: new THREE.Vector3(0, 4.0, 0.8),
+      puzzleSidePos: new THREE.Vector3(9.5, 6.2, 0.5),
       color: 0x9c27b0,
       icon: 'fa-lungs',
       badge: 'Vòng tuần hoàn nhỏ',
@@ -1722,6 +1725,7 @@ function initAssemblyLab() {
       object: vPulmonaryVein,
       originPos: new THREE.Vector3(0, 0, 0),
       explodeOffset: new THREE.Vector3(3.2, 1.8, 1.2),
+      puzzleSidePos: new THREE.Vector3(9.5, 0.4, 0.5),
       color: 0xff334b,
       icon: 'fa-arrow-down',
       badge: 'Vòng tuần hoàn nhỏ',
@@ -1735,6 +1739,7 @@ function initAssemblyLab() {
       object: vSystemicArtery,
       originPos: new THREE.Vector3(0, 0, 0),
       explodeOffset: new THREE.Vector3(3.5, -2.2, 1.2),
+      puzzleSidePos: new THREE.Vector3(9.5, -0.6, 0.5),
       color: 0xff334b,
       icon: 'fa-arrow-down',
       badge: 'Vòng tuần hoàn lớn',
@@ -1748,6 +1753,7 @@ function initAssemblyLab() {
       object: bodyCapillaries,
       originPos: new THREE.Vector3(0, -5.4, 0),
       explodeOffset: new THREE.Vector3(0, -4.0, 0.8),
+      puzzleSidePos: new THREE.Vector3(9.5, -6.5, 0.5),
       color: 0x9c27b0,
       icon: 'fa-network-wired',
       badge: 'Vòng tuần hoàn lớn',
@@ -1761,6 +1767,7 @@ function initAssemblyLab() {
       object: vSystemicVein,
       originPos: new THREE.Vector3(0, 0, 0),
       explodeOffset: new THREE.Vector3(-3.5, -2.2, 1.2),
+      puzzleSidePos: new THREE.Vector3(9.5, -0.6, 0.5),
       color: 0x0088ff,
       icon: 'fa-arrow-up',
       badge: 'Vòng tuần hoàn lớn',
@@ -1897,6 +1904,9 @@ function exitAssemblyLab() {
   document.body.classList.remove('in-lab-mode');
   stopSpeaking();
 
+  const zoneIndicators = document.getElementById('lab-zone-indicators');
+  if (zoneIndicators) zoneIndicators.classList.add('hidden');
+
   // Ráp lại toàn bộ về vị trí chuẩn
   setExplodeFactor(0.0);
   Object.values(labState.parts).forEach(part => {
@@ -1924,11 +1934,15 @@ function setLabMode(mode) {
   const explodeCtrl = document.getElementById('lab-explode-control');
   const clueCard = document.getElementById('lab-clue-card');
   const partsTray = document.getElementById('lab-parts-tray');
+  const zoneIndicators = document.getElementById('lab-zone-indicators');
 
   if (mode === 'explode') {
     explodeCtrl.style.display = 'flex';
     clueCard.classList.add('hidden');
     partsTray.classList.add('hidden');
+    if (zoneIndicators) zoneIndicators.classList.add('hidden');
+
+    animateCameraTo(new THREE.Vector3(0, 0, 27), new THREE.Vector3(0, 0, 0), 600);
 
     // Ẩn các bóng mờ
     Object.values(labState.parts).forEach(part => {
@@ -1941,6 +1955,7 @@ function setLabMode(mode) {
     explodeCtrl.style.display = 'none';
     clueCard.classList.remove('hidden');
     partsTray.classList.remove('hidden');
+    if (zoneIndicators) zoneIndicators.classList.remove('hidden');
 
     startPuzzleChallenge();
   }
@@ -1971,9 +1986,13 @@ function setExplodeFactor(factor) {
 
 function startPuzzleChallenge() {
   labState.assembledCount = 0;
+  // Căn góc camera cân đối giữa Khung mô hình đích (bên trái) và Kệ linh kiện (bên phải)
+  animateCameraTo(new THREE.Vector3(2.5, 0, 28), new THREE.Vector3(2.5, 0, 0), 600);
+
+  // Xếp tất cả các bộ phận dạt gọn gàng sang một bên (bên phải)
   Object.values(labState.parts).forEach(part => {
     part.assembled = false;
-    part.object.position.copy(part.originPos.clone().add(part.explodeOffset));
+    part.object.position.copy(part.puzzleSidePos);
     if (part.ghost) part.ghost.visible = true;
   });
 
@@ -2036,12 +2055,12 @@ function handleDragEnd(clientX, clientY) {
   const worldPos = get3DWorldPos(clientX, clientY);
   const dist = worldPos ? worldPos.distanceTo(part.originPos) : 999;
 
-  // Nếu thả vào gần socket (cự ly < 5.5) hoặc thả lên vùng hiển thị 3D (phía trên khay)
-  if (insideCanvas && (dist < 5.5 || clientY < rect.bottom - 120)) {
+  // Nếu thả vào gần socket (cự ly < 5.5) hoặc kéo thả sang nửa bên trái (nơi đặt khung mô hình đích X < 4.5)
+  if (insideCanvas && (dist < 5.5 || (worldPos && worldPos.x < 4.5 && clientY < rect.bottom - 120))) {
     snapPartIntoPlace(part.id);
   } else {
-    // Trả về vị trí tháo rời ban đầu
-    animatePartTo(part.object, part.originPos.clone().add(part.explodeOffset), 280);
+    // Trả về vị trí kệ linh kiện bên phải
+    animatePartTo(part.object, part.puzzleSidePos, 280);
     setGhostHighlight(part.ghost, part.color, 0.25);
   }
 }
