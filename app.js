@@ -404,12 +404,13 @@ const bodyCapillaries = createCapillaryBed(new THREE.Vector3(0, -5.4, 0), 2.4, 1
 // --- 9. HỆ THỐNG DÒNG CHẢY TẾ BÀO MÁU (3D BLOOD PARTICLES & RBCs) ---
 // Tạo hàng trăm tế bào máu di chuyển dọc theo các đường cong
 class BloodCellSystem {
-  constructor(curve, count, colorStart, colorEnd, isExchange = false) {
+  constructor(curve, count, colorStart, colorEnd, isExchange = false, partId = null) {
     this.curve = curve;
     this.count = count;
     this.colorStart = new THREE.Color(colorStart);
     this.colorEnd = new THREE.Color(colorEnd);
     this.isExchange = isExchange;
+    this.partId = partId;
 
     // Hình dạng đĩa lõm 2 mặt của Hồng cầu (Biconcave Red Blood Cell disc)
     const cellGeom = new THREE.CylinderGeometry(0.08, 0.08, 0.03, 12);
@@ -439,7 +440,12 @@ class BloodCellSystem {
   }
 
   update(delta, speedMultiplier, heartPulseFactor) {
-    if (!state.showCells) {
+    let isVisible = state.showCells;
+    if (isVisible && typeof labState !== 'undefined' && labState.active && labState.mode === 'puzzle') {
+      isVisible = !!(this.partId && labState.parts[this.partId] && labState.parts[this.partId].assembled);
+    }
+
+    if (!isVisible) {
       this.instancedMesh.visible = false;
       return;
     }
@@ -488,7 +494,15 @@ class BloodCellSystem {
   }
 
   setVisible(visible) {
-    this.instancedMesh.visible = visible;
+    if (!visible) {
+      this.instancedMesh.visible = false;
+      return;
+    }
+    if (typeof labState !== 'undefined' && labState.active && labState.mode === 'puzzle') {
+      this.instancedMesh.visible = !!(this.partId && labState.parts[this.partId] && labState.parts[this.partId].assembled);
+    } else {
+      this.instancedMesh.visible = true;
+    }
   }
 }
 
@@ -511,10 +525,11 @@ const bodyCapillaryCurve = new THREE.CatmullRomCurve3([
 
 // Hệ thống Bạch cầu (White Blood Cells) & Tiểu cầu (Platelets) di chuyển trong mạch
 class MixedCellSystem {
-  constructor(curve, count, type) {
+  constructor(curve, count, type, partId = null) {
     this.curve = curve;
     this.count = count;
     this.type = type;
+    this.partId = partId;
 
     let geom, mat;
     if (type === 'wbc') {
@@ -551,7 +566,12 @@ class MixedCellSystem {
   }
 
   update(delta, speedMultiplier, heartPulseFactor) {
-    if (!state.showCells) {
+    let isVisible = state.showCells;
+    if (isVisible && typeof labState !== 'undefined' && labState.active && labState.mode === 'puzzle') {
+      isVisible = !!(this.partId && labState.parts[this.partId] && labState.parts[this.partId].assembled);
+    }
+
+    if (!isVisible) {
       this.instancedMesh.visible = false;
       return;
     }
@@ -581,30 +601,38 @@ class MixedCellSystem {
   }
 
   setVisible(visible) {
-    this.instancedMesh.visible = visible;
+    if (!visible) {
+      this.instancedMesh.visible = false;
+      return;
+    }
+    if (typeof labState !== 'undefined' && labState.active && labState.mode === 'puzzle') {
+      this.instancedMesh.visible = !!(this.partId && labState.parts[this.partId] && labState.parts[this.partId].assembled);
+    } else {
+      this.instancedMesh.visible = true;
+    }
   }
 }
 
 const bloodStreams = [
   // 1. Hồng cầu (Red Blood Cells)
-  new BloodCellSystem(curves.pulmonaryArtery, 35, 0x0088ff, 0x0088ff, false),
-  new BloodCellSystem(lungCapillaryCurve, 20, 0x0088ff, 0xff334b, true),
-  new BloodCellSystem(curves.pulmonaryVein, 35, 0xff334b, 0xff334b, false),
-  new BloodCellSystem(curves.systemicArtery, 45, 0xff334b, 0xff334b, false),
-  new BloodCellSystem(bodyCapillaryCurve, 22, 0xff334b, 0x0088ff, true),
-  new BloodCellSystem(curves.systemicVein, 45, 0x0088ff, 0x0088ff, false),
+  new BloodCellSystem(curves.pulmonaryArtery, 35, 0x0088ff, 0x0088ff, false, 'artery-pulmonary'),
+  new BloodCellSystem(lungCapillaryCurve, 20, 0x0088ff, 0xff334b, true, 'capillaries-lungs'),
+  new BloodCellSystem(curves.pulmonaryVein, 35, 0xff334b, 0xff334b, false, 'vein-pulmonary'),
+  new BloodCellSystem(curves.systemicArtery, 45, 0xff334b, 0xff334b, false, 'artery-systemic'),
+  new BloodCellSystem(bodyCapillaryCurve, 22, 0xff334b, 0x0088ff, true, 'capillaries-body'),
+  new BloodCellSystem(curves.systemicVein, 45, 0x0088ff, 0x0088ff, false, 'vein-systemic'),
 
   // 2. Bạch cầu (White Blood Cells - to hơn, màu trắng/cyan)
-  new MixedCellSystem(curves.pulmonaryArtery, 4, 'wbc'),
-  new MixedCellSystem(curves.pulmonaryVein, 4, 'wbc'),
-  new MixedCellSystem(curves.systemicArtery, 6, 'wbc'),
-  new MixedCellSystem(curves.systemicVein, 6, 'wbc'),
+  new MixedCellSystem(curves.pulmonaryArtery, 4, 'wbc', 'artery-pulmonary'),
+  new MixedCellSystem(curves.pulmonaryVein, 4, 'wbc', 'vein-pulmonary'),
+  new MixedCellSystem(curves.systemicArtery, 6, 'wbc', 'artery-systemic'),
+  new MixedCellSystem(curves.systemicVein, 6, 'wbc', 'vein-systemic'),
 
   // 3. Tiểu cầu (Platelets - nhỏ, màu tím)
-  new MixedCellSystem(curves.pulmonaryArtery, 8, 'platelet'),
-  new MixedCellSystem(curves.pulmonaryVein, 8, 'platelet'),
-  new MixedCellSystem(curves.systemicArtery, 10, 'platelet'),
-  new MixedCellSystem(curves.systemicVein, 10, 'platelet')
+  new MixedCellSystem(curves.pulmonaryArtery, 8, 'platelet', 'artery-pulmonary'),
+  new MixedCellSystem(curves.pulmonaryVein, 8, 'platelet', 'vein-pulmonary'),
+  new MixedCellSystem(curves.systemicArtery, 10, 'platelet', 'artery-systemic'),
+  new MixedCellSystem(curves.systemicVein, 10, 'platelet', 'vein-systemic')
 ];
 
 // --- 10. MŨI TÊN CHỈ HƯỚNG DÒNG CHẢY (FLOW ARROWS THEO SGK) ---
@@ -623,19 +651,19 @@ function createFlowChevron(colorHex = 0xffffff) {
 
 const arrowTrackers = [
   // Động mạch phổi (Mũi tên đi lên)
-  { curve: curves.pulmonaryArtery, mesh: createFlowChevron(0xffffff), t: 0.25 },
-  { curve: curves.pulmonaryArtery, mesh: createFlowChevron(0xffffff), t: 0.7 },
+  { curve: curves.pulmonaryArtery, mesh: createFlowChevron(0xffffff), t: 0.25, partId: 'artery-pulmonary' },
+  { curve: curves.pulmonaryArtery, mesh: createFlowChevron(0xffffff), t: 0.7, partId: 'artery-pulmonary' },
   // Tĩnh mạch phổi (Mũi tên đi xuống)
-  { curve: curves.pulmonaryVein, mesh: createFlowChevron(0xffffff), t: 0.3 },
-  { curve: curves.pulmonaryVein, mesh: createFlowChevron(0xffffff), t: 0.75 },
+  { curve: curves.pulmonaryVein, mesh: createFlowChevron(0xffffff), t: 0.3, partId: 'vein-pulmonary' },
+  { curve: curves.pulmonaryVein, mesh: createFlowChevron(0xffffff), t: 0.75, partId: 'vein-pulmonary' },
   // Động mạch chủ (Mũi tên đi xuống)
-  { curve: curves.systemicArtery, mesh: createFlowChevron(0xffffff), t: 0.25 },
-  { curve: curves.systemicArtery, mesh: createFlowChevron(0xffffff), t: 0.55 },
-  { curve: curves.systemicArtery, mesh: createFlowChevron(0xffffff), t: 0.85 },
+  { curve: curves.systemicArtery, mesh: createFlowChevron(0xffffff), t: 0.25, partId: 'artery-systemic' },
+  { curve: curves.systemicArtery, mesh: createFlowChevron(0xffffff), t: 0.55, partId: 'artery-systemic' },
+  { curve: curves.systemicArtery, mesh: createFlowChevron(0xffffff), t: 0.85, partId: 'artery-systemic' },
   // Tĩnh mạch chủ (Mũi tên đi lên)
-  { curve: curves.systemicVein, mesh: createFlowChevron(0xffffff), t: 0.25 },
-  { curve: curves.systemicVein, mesh: createFlowChevron(0xffffff), t: 0.55 },
-  { curve: curves.systemicVein, mesh: createFlowChevron(0xffffff), t: 0.85 }
+  { curve: curves.systemicVein, mesh: createFlowChevron(0xffffff), t: 0.25, partId: 'vein-systemic' },
+  { curve: curves.systemicVein, mesh: createFlowChevron(0xffffff), t: 0.55, partId: 'vein-systemic' },
+  { curve: curves.systemicVein, mesh: createFlowChevron(0xffffff), t: 0.85, partId: 'vein-systemic' }
 ];
 
 arrowTrackers.forEach(item => arrowsGroup.add(item.mesh));
@@ -2595,17 +2623,23 @@ function animate() {
       heartPulseScale = 1.0;
     }
 
-    heartGroup.scale.set(heartPulseScale, heartPulseScale * 1.02, heartPulseScale * 0.98);
+    const isHeartAssembled = !(typeof labState !== 'undefined' && labState.active && labState.mode === 'puzzle') || (labState.parts['heart'] && labState.parts['heart'].assembled);
 
-    // Kích hoạt âm thanh nhịp tim mỗi chu kỳ
-    const currentHeartCycle = Math.floor(state.time * cycleFreq);
-    if (currentHeartCycle !== lastHeartBeat) {
-      lastHeartBeat = currentHeartCycle;
-      playHeartbeatSound();
+    if (isHeartAssembled) {
+      heartGroup.scale.set(heartPulseScale, heartPulseScale * 1.02, heartPulseScale * 0.98);
+
+      // Kích hoạt âm thanh nhịp tim mỗi chu kỳ
+      const currentHeartCycle = Math.floor(state.time * cycleFreq);
+      if (currentHeartCycle !== lastHeartBeat) {
+        lastHeartBeat = currentHeartCycle;
+        playHeartbeatSound();
+      }
+    } else {
+      heartGroup.scale.set(1.0, 1.0, 1.0);
     }
 
     // Cập nhật vị trí các tế bào máu
-    const heartFactor = Math.max(0, heartPulseScale - 1.0) * 8.0;
+    const heartFactor = isHeartAssembled ? Math.max(0, heartPulseScale - 1.0) * 8.0 : 0;
     bloodStreams.forEach(stream => {
       stream.update(delta, state.speed, heartFactor);
     });
@@ -2613,6 +2647,13 @@ function animate() {
     // Cập nhật vị trí mũi tên dòng chảy
     if (state.showArrows) {
       arrowTrackers.forEach(item => {
+        let isVisible = true;
+        if (typeof labState !== 'undefined' && labState.active && labState.mode === 'puzzle') {
+          isVisible = !!(item.partId && labState.parts[item.partId] && labState.parts[item.partId].assembled);
+        }
+        item.mesh.visible = isVisible;
+        if (!isVisible) return;
+
         item.t = (item.t + delta * 0.08 * state.speed) % 1.0;
         const pos = item.curve.getPointAt(item.t);
         const tangent = item.curve.getTangentAt(item.t);
@@ -2620,6 +2661,8 @@ function animate() {
         item.mesh.position.copy(pos);
         item.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
       });
+    } else {
+      arrowTrackers.forEach(item => { item.mesh.visible = false; });
     }
 
     // Rung nhẹ lưới mao mạch mô phỏng sự trao đổi chất
