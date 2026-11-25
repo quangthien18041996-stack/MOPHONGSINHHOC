@@ -1818,6 +1818,91 @@ function initAssemblyLab() {
     part.ghost = gMesh;
     labState.ghostObjects.push(gMesh);
   });
+
+  // Các vị trí ô chứa (Slots) độc lập, xếp ngay ngắn thành 2 cột theo đúng thứ tự 1 -> 7
+  const partSlots = {
+    // Cột 1 (Bên trái kệ): Tim + Vòng tuần hoàn nhỏ (thứ tự 1 -> 4)
+    'heart':             { slot: new THREE.Vector3(8.0, 4.3, 0.4), order: 1 },
+    'artery-pulmonary':  { slot: new THREE.Vector3(8.0, 1.4, 0.4), order: 2 },
+    'capillaries-lungs': { slot: new THREE.Vector3(8.0, -1.5, 0.4), order: 3 },
+    'vein-pulmonary':    { slot: new THREE.Vector3(8.0, -4.4, 0.4), order: 4 },
+    // Cột 2 (Bên phải kệ): Vòng tuần hoàn lớn (thứ tự 5 -> 7)
+    'artery-systemic':   { slot: new THREE.Vector3(12.0, 3.4, 0.4), order: 5 },
+    'capillaries-body':  { slot: new THREE.Vector3(12.0, 0.0, 0.4), order: 6 },
+    'vein-systemic':     { slot: new THREE.Vector3(12.0, -3.4, 0.4), order: 7 }
+  };
+
+  // Tạo nhóm kệ & bệ đỡ cho các linh kiện bên phải
+  let shelfGroup = scene.getObjectByName('assemblyShelfGroup');
+  if (!shelfGroup) {
+    shelfGroup = new THREE.Group();
+    shelfGroup.name = 'assemblyShelfGroup';
+    shelfGroup.visible = false;
+    scene.add(shelfGroup);
+  } else {
+    while (shelfGroup.children.length > 0) shelfGroup.remove(shelfGroup.children[0]);
+  }
+
+  // Tính toán tâm hình học chính xác và tạo bệ đỡ cho từng bộ phận
+  Object.values(labState.parts).forEach(part => {
+    const slotInfo = partSlots[part.id];
+    if (slotInfo) {
+      part.slotPos = slotInfo.slot.clone();
+      part.order = slotInfo.order;
+
+      // Đo tâm hình học chuẩn xác của vật thể 3D
+      const origPos = part.object.position.clone();
+      part.object.position.set(0, 0, 0);
+      part.object.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(part.object);
+      const geoCenter = new THREE.Vector3();
+      box.getCenter(geoCenter);
+      part.object.position.copy(origPos);
+      part.object.updateMatrixWorld(true);
+
+      // Đặt vị trí vật thể sao cho tâm của nó trùng khớp vào slotPos độc lập
+      part.puzzleSidePos = part.slotPos.clone().sub(geoCenter);
+
+      // Tạo bệ đỡ tròn phát sáng cho từng ô linh kiện
+      const baseGeo = new THREE.CylinderGeometry(1.2, 1.35, 0.06, 20);
+      const baseMat = new THREE.MeshBasicMaterial({
+        color: part.color,
+        transparent: true,
+        opacity: 0.28
+      });
+      const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+      baseMesh.position.set(part.slotPos.x, part.slotPos.y - 1.25, 0.1);
+      baseMesh.rotation.x = Math.PI * 0.1;
+      baseMesh.userData = { partId: part.id };
+      shelfGroup.add(baseMesh);
+
+      // Thêm nhãn số thứ tự [1] -> [7] bằng Sprite
+      const spriteCanvas = document.createElement('canvas');
+      spriteCanvas.width = 128;
+      spriteCanvas.height = 128;
+      const ctx = spriteCanvas.getContext('2d');
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      ctx.arc(64, 64, 52, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.lineWidth = 8;
+      ctx.strokeStyle = `#${part.color.toString(16).padStart(6, '0')}`;
+      ctx.stroke();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 54px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(`${part.order}`, 64, 64);
+
+      const spriteTexture = new THREE.CanvasTexture(spriteCanvas);
+      const spriteMat = new THREE.SpriteMaterial({ map: spriteTexture, transparent: true });
+      const numSprite = new THREE.Sprite(spriteMat);
+      numSprite.scale.set(0.9, 0.9, 1);
+      numSprite.position.set(part.slotPos.x - 1.5, part.slotPos.y + 1.25, 1.0);
+      numSprite.renderOrder = 99;
+      shelfGroup.add(numSprite);
+    }
+  });
 }
 
 function setGhostHighlight(ghostObj, hexColor, opacity) {
@@ -1907,6 +1992,9 @@ function exitAssemblyLab() {
   const zoneIndicators = document.getElementById('lab-zone-indicators');
   if (zoneIndicators) zoneIndicators.classList.add('hidden');
 
+  const shelfGroup = scene.getObjectByName('assemblyShelfGroup');
+  if (shelfGroup) shelfGroup.visible = false;
+
   // Ráp lại toàn bộ về vị trí chuẩn
   setExplodeFactor(0.0);
   Object.values(labState.parts).forEach(part => {
@@ -1935,12 +2023,14 @@ function setLabMode(mode) {
   const clueCard = document.getElementById('lab-clue-card');
   const partsTray = document.getElementById('lab-parts-tray');
   const zoneIndicators = document.getElementById('lab-zone-indicators');
+  const shelfGroup = scene.getObjectByName('assemblyShelfGroup');
 
   if (mode === 'explode') {
     explodeCtrl.style.display = 'flex';
     clueCard.classList.add('hidden');
     partsTray.classList.add('hidden');
     if (zoneIndicators) zoneIndicators.classList.add('hidden');
+    if (shelfGroup) shelfGroup.visible = false;
 
     animateCameraTo(new THREE.Vector3(0, 0, 27), new THREE.Vector3(0, 0, 0), 600);
 
@@ -1986,10 +2076,20 @@ function setExplodeFactor(factor) {
 
 function startPuzzleChallenge() {
   labState.assembledCount = 0;
-  // Căn góc camera cân đối giữa Khung mô hình đích (bên trái) và Kệ linh kiện (bên phải)
-  animateCameraTo(new THREE.Vector3(2.5, 0, 28), new THREE.Vector3(2.5, 0, 0), 600);
+  // Căn góc camera cân đối, thoáng đãng giữa Khung mô hình đích (bên trái) và Kệ linh kiện (bên phải)
+  animateCameraTo(new THREE.Vector3(2.5, 0, 31), new THREE.Vector3(2.5, 0, 0), 600);
 
-  // Xếp tất cả các bộ phận dạt gọn gàng sang một bên (bên phải)
+  const shelfGroup = scene.getObjectByName('assemblyShelfGroup');
+  if (shelfGroup) {
+    shelfGroup.visible = true;
+    shelfGroup.traverse(child => {
+      if (child.userData && child.userData.partId) {
+        child.visible = true;
+      }
+    });
+  }
+
+  // Xếp tất cả các bộ phận dạt gọn gàng sang một bên theo thứ tự độc lập
   Object.values(labState.parts).forEach(part => {
     part.assembled = false;
     part.object.position.copy(part.puzzleSidePos);
@@ -2168,6 +2268,7 @@ function renderTrayItems() {
       card.setAttribute('draggable', 'true');
     }
     card.innerHTML = `
+      <span class="tray-order-num">${part.order || ''}</span>
       <i class="fa-solid fa-grip-vertical tray-grip" title="Kéo thả vào mô hình"></i>
       <div class="tray-item-icon" style="background: ${part.color}">
         <i class="fa-solid ${part.icon}"></i>
@@ -2241,6 +2342,16 @@ function snapPartIntoPlace(partId) {
   // Animate smoothly về vị trí origin
   animatePartTo(part.object, part.originPos, 450);
   if (part.ghost) part.ghost.visible = false;
+
+  // Ẩn bệ đỡ tương ứng trên kệ bên phải
+  const shelfGroup = scene.getObjectByName('assemblyShelfGroup');
+  if (shelfGroup) {
+    shelfGroup.traverse(child => {
+      if (child.userData && child.userData.partId === partId) {
+        child.visible = false;
+      }
+    });
+  }
 
   playSnapSound();
 
