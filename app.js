@@ -442,7 +442,7 @@ class BloodCellSystem {
   update(delta, speedMultiplier, heartPulseFactor) {
     let isVisible = state.showCells;
     if (isVisible && typeof labState !== 'undefined' && labState.active && labState.mode === 'puzzle') {
-      isVisible = !!(this.partId && labState.parts[this.partId] && labState.parts[this.partId].assembled);
+      isVisible = !!(this.partId && labState.parts[this.partId] && labState.parts[this.partId].assembled && labState.parts[this.partId].isCorrect);
     }
 
     if (!isVisible) {
@@ -499,7 +499,7 @@ class BloodCellSystem {
       return;
     }
     if (typeof labState !== 'undefined' && labState.active && labState.mode === 'puzzle') {
-      this.instancedMesh.visible = !!(this.partId && labState.parts[this.partId] && labState.parts[this.partId].assembled);
+      this.instancedMesh.visible = !!(this.partId && labState.parts[this.partId] && labState.parts[this.partId].assembled && labState.parts[this.partId].isCorrect);
     } else {
       this.instancedMesh.visible = true;
     }
@@ -568,7 +568,7 @@ class MixedCellSystem {
   update(delta, speedMultiplier, heartPulseFactor) {
     let isVisible = state.showCells;
     if (isVisible && typeof labState !== 'undefined' && labState.active && labState.mode === 'puzzle') {
-      isVisible = !!(this.partId && labState.parts[this.partId] && labState.parts[this.partId].assembled);
+      isVisible = !!(this.partId && labState.parts[this.partId] && labState.parts[this.partId].assembled && labState.parts[this.partId].isCorrect);
     }
 
     if (!isVisible) {
@@ -606,7 +606,7 @@ class MixedCellSystem {
       return;
     }
     if (typeof labState !== 'undefined' && labState.active && labState.mode === 'puzzle') {
-      this.instancedMesh.visible = !!(this.partId && labState.parts[this.partId] && labState.parts[this.partId].assembled);
+      this.instancedMesh.visible = !!(this.partId && labState.parts[this.partId] && labState.parts[this.partId].assembled && labState.parts[this.partId].isCorrect);
     } else {
       this.instancedMesh.visible = true;
     }
@@ -1708,6 +1708,7 @@ function initAssemblyLab() {
     'heart': {
       id: 'heart',
       name: 'Tim (4 ngăn)',
+      type: 'heart',
       object: heartGroup,
       originPos: new THREE.Vector3(0, 0, 0),
       explodeOffset: new THREE.Vector3(0, 0, 0.4),
@@ -1717,11 +1718,14 @@ function initAssemblyLab() {
       badge: 'Trung tâm tuần hoàn',
       clue: 'Khối cơ rỗng gồm 4 ngăn nằm ở trung tâm lồng ngực, hoạt động như chiếc máy bơm hút và đẩy máu đi khắp 2 vòng tuần hoàn.',
       assembled: true,
+      isCorrect: true,
+      currentSlot: 'slot-heart',
       ghost: null
     },
     'artery-pulmonary': {
       id: 'artery-pulmonary',
       name: 'Động mạch phổi',
+      type: 'vessel',
       object: vPulmonaryArtery,
       originPos: new THREE.Vector3(0, 0, 0),
       explodeOffset: new THREE.Vector3(-3.2, 1.8, 1.2),
@@ -1731,11 +1735,14 @@ function initAssemblyLab() {
       badge: 'Vòng tuần hoàn nhỏ',
       clue: 'Mạch máu xuất phát từ Tâm thất phải, dẫn máu đỏ thẫm (giàu CO₂) đi lên lưới mao mạch phổi để trao đổi khí.',
       assembled: true,
+      isCorrect: true,
+      currentSlot: 'slot-artery-pulmonary',
       ghost: null
     },
     'capillaries-lungs': {
       id: 'capillaries-lungs',
       name: 'Mao mạch phổi',
+      type: 'capillaries',
       object: lungCapillaries,
       originPos: new THREE.Vector3(0, 5.4, 0),
       explodeOffset: new THREE.Vector3(0, 4.0, 0.8),
@@ -1745,11 +1752,14 @@ function initAssemblyLab() {
       badge: 'Vòng tuần hoàn nhỏ',
       clue: 'Lưới mao mạch nằm ở đỉnh phía trên bao quanh phế nang, nơi máu thải khí CO₂ và nhận O₂ biến thành máu đỏ tươi.',
       assembled: true,
+      isCorrect: true,
+      currentSlot: 'slot-capillaries-lungs',
       ghost: null
     },
     'vein-pulmonary': {
       id: 'vein-pulmonary',
       name: 'Tĩnh mạch phổi',
+      type: 'vessel',
       object: vPulmonaryVein,
       originPos: new THREE.Vector3(0, 0, 0),
       explodeOffset: new THREE.Vector3(3.2, 1.8, 1.2),
@@ -1759,11 +1769,14 @@ function initAssemblyLab() {
       badge: 'Vòng tuần hoàn nhỏ',
       clue: 'Mạch máu dẫn máu đỏ tươi (giàu O₂) vừa được nạp oxy từ mao mạch phổi đi xuống đổ về Tâm nhĩ trái của tim.',
       assembled: true,
+      isCorrect: true,
+      currentSlot: 'slot-vein-pulmonary',
       ghost: null
     },
     'artery-systemic': {
       id: 'artery-systemic',
       name: 'Động mạch (chủ)',
+      type: 'vessel',
       object: vSystemicArtery,
       originPos: new THREE.Vector3(0, 0, 0),
       explodeOffset: new THREE.Vector3(3.5, -2.2, 1.2),
@@ -1773,11 +1786,14 @@ function initAssemblyLab() {
       badge: 'Vòng tuần hoàn lớn',
       clue: 'Động mạch lớn nhất cơ thể xuất phát từ Tâm thất trái, dẫn dòng máu đỏ tươi giàu O₂ đi xuống nuôi dưỡng các cơ quan.',
       assembled: true,
+      isCorrect: true,
+      currentSlot: 'slot-artery-systemic',
       ghost: null
     },
     'capillaries-body': {
       id: 'capillaries-body',
       name: 'Mao mạch ở các cơ quan',
+      type: 'capillaries',
       object: bodyCapillaries,
       originPos: new THREE.Vector3(0, -5.4, 0),
       explodeOffset: new THREE.Vector3(0, -4.0, 0.8),
@@ -1787,11 +1803,14 @@ function initAssemblyLab() {
       badge: 'Vòng tuần hoàn lớn',
       clue: 'Mạng lưới mao mạch phía dưới nuôi tế bào cơ quan, tại đây máu nhường O₂ & dưỡng chất, nhận lại CO₂ trở thành máu đỏ thẫm.',
       assembled: true,
+      isCorrect: true,
+      currentSlot: 'slot-capillaries-body',
       ghost: null
     },
     'vein-systemic': {
       id: 'vein-systemic',
       name: 'Tĩnh mạch',
+      type: 'vessel',
       object: vSystemicVein,
       originPos: new THREE.Vector3(0, 0, 0),
       explodeOffset: new THREE.Vector3(-3.5, -2.2, 1.2),
@@ -1801,6 +1820,8 @@ function initAssemblyLab() {
       badge: 'Vòng tuần hoàn lớn',
       clue: 'Hệ thống tĩnh mạch thu gom máu nghèo O₂ (màu xanh/đỏ thẫm) từ các cơ quan đi lên để đổ về Tâm nhĩ phải.',
       assembled: true,
+      isCorrect: true,
+      currentSlot: 'slot-vein-systemic',
       ghost: null
     }
   };
@@ -1940,6 +1961,141 @@ function setGhostHighlight(ghostObj, hexColor, opacity) {
       if (child.material.color) child.material.color.setHex(hexColor);
       child.material.opacity = opacity;
       child.material.transparent = true;
+    }
+  });
+}
+
+// 7 vị trí cắm (Target Slots) trên khung mô hình đích
+const TARGET_SLOTS = {
+  'slot-heart': {
+    id: 'slot-heart',
+    name: 'Tim (4 ngăn)',
+    targetCenter: new THREE.Vector3(0, 0, 0),
+    correctPartId: 'heart',
+    allowedTypes: ['heart'],
+    occupant: null
+  },
+  'slot-artery-pulmonary': {
+    id: 'slot-artery-pulmonary',
+    name: 'Động mạch phổi (Phía trên - Trái)',
+    targetCenter: new THREE.Vector3(-1.3, 3.0, 0),
+    correctPartId: 'artery-pulmonary',
+    allowedTypes: ['vessel'],
+    occupant: null
+  },
+  'slot-vein-pulmonary': {
+    id: 'slot-vein-pulmonary',
+    name: 'Tĩnh mạch phổi (Phía trên - Phải)',
+    targetCenter: new THREE.Vector3(1.3, 3.0, 0),
+    correctPartId: 'vein-pulmonary',
+    allowedTypes: ['vessel'],
+    occupant: null
+  },
+  'slot-artery-systemic': {
+    id: 'slot-artery-systemic',
+    name: 'Động mạch (chủ) (Phía dưới - Phải)',
+    targetCenter: new THREE.Vector3(1.5, -2.5, 0),
+    correctPartId: 'artery-systemic',
+    allowedTypes: ['vessel'],
+    occupant: null
+  },
+  'slot-vein-systemic': {
+    id: 'slot-vein-systemic',
+    name: 'Tĩnh mạch (Phía dưới - Trái)',
+    targetCenter: new THREE.Vector3(-1.5, -2.5, 0),
+    correctPartId: 'vein-systemic',
+    allowedTypes: ['vessel'],
+    occupant: null
+  },
+  'slot-capillaries-lungs': {
+    id: 'slot-capillaries-lungs',
+    name: 'Mao mạch phổi (Đỉnh trên)',
+    targetCenter: new THREE.Vector3(0, 5.4, 0),
+    correctPartId: 'capillaries-lungs',
+    allowedTypes: ['capillaries'],
+    occupant: null
+  },
+  'slot-capillaries-body': {
+    id: 'slot-capillaries-body',
+    name: 'Mao mạch ở các cơ quan (Đáy dưới)',
+    targetCenter: new THREE.Vector3(0, -5.4, 0),
+    correctPartId: 'capillaries-body',
+    allowedTypes: ['capillaries'],
+    occupant: null
+  }
+};
+
+function getPartSlotTransform(partId, slotId) {
+  if (slotId === 'slot-heart') {
+    return { pos: new THREE.Vector3(0, 0, 0), scale: new THREE.Vector3(1, 1, 1) };
+  }
+  if (slotId === 'slot-capillaries-lungs') {
+    return { pos: new THREE.Vector3(0, 5.4, 0), scale: new THREE.Vector3(1, 1, 1) };
+  }
+  if (slotId === 'slot-capillaries-body') {
+    return { pos: new THREE.Vector3(0, -5.4, 0), scale: new THREE.Vector3(1, 1, 1) };
+  }
+
+  // 4 nhánh mạch máu
+  const slotQuadrant = {
+    'slot-artery-pulmonary': { x: -1, y: 1 },
+    'slot-vein-pulmonary':   { x: 1,  y: 1 },
+    'slot-artery-systemic':  { x: 1,  y: -1 },
+    'slot-vein-systemic':    { x: -1, y: -1 }
+  };
+  const partQuadrant = {
+    'artery-pulmonary': { x: -1, y: 1 },
+    'vein-pulmonary':   { x: 1,  y: 1 },
+    'artery-systemic':  { x: 1,  y: -1 },
+    'vein-systemic':    { x: -1, y: -1 }
+  };
+
+  const sQ = slotQuadrant[slotId];
+  const pQ = partQuadrant[partId];
+  if (!sQ || !pQ) {
+    return { pos: new THREE.Vector3(0, 0, 0), scale: new THREE.Vector3(1, 1, 1) };
+  }
+
+  const sx = (sQ.x === pQ.x) ? 1 : -1;
+  const sy = (sQ.y === pQ.y) ? 1 : -1;
+  return { pos: new THREE.Vector3(0, 0, 0), scale: new THREE.Vector3(sx, sy, 1) };
+}
+
+function setShelfPedestalVisible(partId, visible) {
+  const shelfGroup = scene.getObjectByName('assemblyShelfGroup');
+  if (shelfGroup) {
+    shelfGroup.traverse(child => {
+      if (child.userData && child.userData.partId === partId) {
+        child.visible = visible;
+      }
+    });
+  }
+}
+
+function showLabAlert(msg) {
+  let alertBox = document.getElementById('lab-alert-box');
+  if (!alertBox) {
+    alertBox = document.createElement('div');
+    alertBox.id = 'lab-alert-box';
+    alertBox.className = 'lab-alert-box';
+    const hud = document.getElementById('assembly-lab-hud');
+    if (hud) hud.appendChild(alertBox);
+  }
+  if (alertBox) {
+    alertBox.innerHTML = msg;
+    alertBox.classList.add('show');
+    clearTimeout(alertBox._timer);
+    alertBox._timer = setTimeout(() => {
+      alertBox.classList.remove('show');
+    }, 4500);
+  }
+}
+
+function updateGhostVisibility() {
+  Object.values(TARGET_SLOTS).forEach(slot => {
+    const correctPart = labState.parts[slot.correctPartId];
+    if (correctPart && correctPart.ghost) {
+      correctPart.ghost.visible = !slot.occupant;
     }
   });
 }
@@ -2109,6 +2265,11 @@ function startPuzzleChallenge() {
   // Căn góc camera cân đối, thoáng đãng giữa Khung mô hình đích (bên trái) và Kệ linh kiện (bên phải)
   animateCameraTo(new THREE.Vector3(2.5, 0, 31), new THREE.Vector3(2.5, 0, 0), 600);
 
+  // Reset toàn bộ các vị trí cắm (Slots)
+  Object.values(TARGET_SLOTS).forEach(slot => {
+    slot.occupant = null;
+  });
+
   const shelfGroup = scene.getObjectByName('assemblyShelfGroup');
   if (shelfGroup) {
     shelfGroup.visible = true;
@@ -2122,6 +2283,9 @@ function startPuzzleChallenge() {
   // Xếp tất cả các bộ phận dạt gọn gàng sang một bên theo thứ tự độc lập
   Object.values(labState.parts).forEach(part => {
     part.assembled = false;
+    part.isCorrect = false;
+    part.currentSlot = null;
+    part.object.scale.set(1, 1, 1);
     part.object.position.copy(part.puzzleSidePos);
     if (part.ghost) part.ghost.visible = true;
   });
@@ -2163,6 +2327,28 @@ function handleDragMove(clientX, clientY) {
   activeDragPart.object.position.set(worldPos.x, worldPos.y, activeDragPart.originPos.z + 0.3);
 }
 
+function findBestMatchingSlot(part, worldPos) {
+  let bestSlot = null;
+  let minDist = 999;
+
+  Object.values(TARGET_SLOTS).forEach(slot => {
+    // Chỉ xét các slot tương thích với loại bộ phận (mao mạch vào mao mạch, mạch máu vào mạch máu, tim vào tim)
+    if (!slot.allowedTypes.includes(part.type)) return;
+
+    const dist = worldPos.distanceTo(slot.targetCenter);
+    if (dist < minDist) {
+      minDist = dist;
+      bestSlot = slot;
+    }
+  });
+
+  // Cự ly cho phép bắt dính vào slot (4.8 đơn vị thế giới)
+  if (minDist < 4.8) {
+    return bestSlot;
+  }
+  return null;
+}
+
 function handleDragEnd(clientX, clientY) {
   if (!activeDragPart) return;
   const part = activeDragPart;
@@ -2175,11 +2361,28 @@ function handleDragEnd(clientX, clientY) {
                        clientY >= rect.top && clientY <= rect.bottom;
 
   const worldPos = get3DWorldPos(clientX, clientY);
-  const dist = worldPos ? worldPos.distanceTo(part.originPos) : 999;
 
-  // Nếu thả vào gần socket (cự ly < 5.5) hoặc kéo thả sang nửa bên trái (nơi đặt khung mô hình đích X < 4.5)
-  if (insideCanvas && (dist < 5.5 || (worldPos && worldPos.x < 4.5 && clientY < rect.bottom - 120))) {
-    snapPartIntoPlace(part.id);
+  if (insideCanvas && worldPos) {
+    // 1. Nếu kéo thả về khu vực kệ linh kiện bên phải (X > 5.2): tháo bộ phận trả về kệ chờ
+    if (worldPos.x > 5.2) {
+      uninstallPartToShelf(part.id);
+      return;
+    }
+
+    // 2. Nếu thả sang khu vực mô hình đích bên trái (X < 4.5): tìm vị trí cắm (slot) tương thích gần nhất
+    if (worldPos.x < 4.5 && clientY < rect.bottom - 100) {
+      const bestSlot = findBestMatchingSlot(part, worldPos);
+      if (bestSlot) {
+        snapPartIntoSlot(part.id, bestSlot.id);
+        return;
+      }
+    }
+  }
+
+  // 3. Nếu thả ra ở khoảng trống không hợp lệ:
+  if (part.assembled && part.currentSlot) {
+    const tf = getPartSlotTransform(part.id, part.currentSlot);
+    animatePartTo(part.object, tf.pos, 280);
   } else {
     // Trả về vị trí kệ linh kiện bên phải
     animatePartTo(part.object, part.puzzleSidePos, 280);
@@ -2205,7 +2408,6 @@ window.addEventListener('drop', (e) => {
 
 function setupCardDragDrop(card, part) {
   card.addEventListener('dragstart', (e) => {
-    if (part.assembled) return;
     activeDragPart = part;
     controls.enabled = false;
     card.classList.add('dragging');
@@ -2235,7 +2437,6 @@ function setupCardPointerDrag(card, part) {
   let startY = 0;
 
   card.addEventListener('pointerdown', (e) => {
-    if (part.assembled) return;
     isDown = true;
     didMove = false;
     startX = e.clientX;
@@ -2283,12 +2484,16 @@ function renderTrayItems() {
 
   grid.innerHTML = '';
   Object.values(labState.parts).forEach(part => {
-    const card = document.createElement('div');
-    card.className = `tray-item-card ${part.assembled ? 'placed' : ''} ${labState.selectedPartId === part.id ? 'selected' : ''}`;
-    card.dataset.id = part.id;
-    if (!part.assembled) {
-      card.setAttribute('draggable', 'true');
+    let placedClass = '';
+    if (part.assembled) {
+      placedClass = part.isCorrect ? 'placed correct' : 'placed wrong';
     }
+
+    const card = document.createElement('div');
+    card.className = `tray-item-card ${placedClass} ${labState.selectedPartId === part.id ? 'selected' : ''}`;
+    card.dataset.id = part.id;
+    card.setAttribute('draggable', 'true');
+
     card.innerHTML = `
       <span class="tray-order-num">${part.order || ''}</span>
       <i class="fa-solid fa-grip-vertical tray-grip" title="Kéo thả vào mô hình"></i>
@@ -2332,7 +2537,11 @@ function selectTrayPart(partId) {
 
   if (clueBadge) clueBadge.textContent = part.badge.toUpperCase();
   if (clueTitle) clueTitle.textContent = `Lắp: ${part.name}`;
-  if (clueDesc) clueDesc.textContent = part.clue;
+  if (part.assembled && !part.isCorrect) {
+    if (clueDesc) clueDesc.innerHTML = `<span style="color: #fbbf24; font-weight: 700;">⚠️ Bộ phận này đang lắp sai vị trí (dòng máu chưa thể lưu thông)!</span> Em hãy quan sát hình dáng và kéo sang vị trí đúng hoặc kéo về kệ chờ để đổi lại.`;
+  } else {
+    if (clueDesc) clueDesc.textContent = part.clue;
+  }
 
   // Giữ toàn bộ khung bóng mờ ở màu tự nhiên đồng nhất, không phát sáng màu xanh chỉ điểm
   Object.values(labState.parts).forEach(p => {
@@ -2346,40 +2555,95 @@ function selectTrayPart(partId) {
   }
 }
 
-function snapPartIntoPlace(partId) {
+function snapPartIntoSlot(partId, slotId) {
   const part = labState.parts[partId];
-  if (!part || part.assembled) return;
+  const slot = TARGET_SLOTS[slotId];
+  if (!part || !slot) return;
 
-  part.assembled = true;
-  labState.assembledCount++;
-
-  // Animate smoothly về vị trí origin
-  animatePartTo(part.object, part.originPos, 450);
-  if (part.ghost) part.ghost.visible = false;
-
-  // Ẩn bệ đỡ tương ứng trên kệ bên phải
-  const shelfGroup = scene.getObjectByName('assemblyShelfGroup');
-  if (shelfGroup) {
-    shelfGroup.traverse(child => {
-      if (child.userData && child.userData.partId === partId) {
-        child.visible = false;
-      }
-    });
+  // Nếu bộ phận này đang ở slot khác, giải phóng slot cũ
+  if (part.currentSlot && part.currentSlot !== slotId) {
+    const oldSlot = TARGET_SLOTS[part.currentSlot];
+    if (oldSlot && oldSlot.occupant === partId) {
+      oldSlot.occupant = null;
+    }
   }
 
-  playSnapSound();
+  // Nếu slot này đã có bộ phận khác đang cắm, đưa bộ phận cũ về kệ bên phải
+  if (slot.occupant && slot.occupant !== partId) {
+    const prevOccupant = labState.parts[slot.occupant];
+    if (prevOccupant) {
+      prevOccupant.assembled = false;
+      prevOccupant.isCorrect = false;
+      prevOccupant.currentSlot = null;
+      prevOccupant.object.scale.set(1, 1, 1);
+      animatePartTo(prevOccupant.object, prevOccupant.puzzleSidePos, 350);
+      setShelfPedestalVisible(prevOccupant.id, true);
+    }
+  }
 
-  renderTrayItems();
+  // Gắn bộ phận vào slot mới
+  slot.occupant = partId;
+  part.currentSlot = slotId;
+  part.assembled = true;
+  part.isCorrect = (slot.correctPartId === partId);
+
+  // Áp dụng phép biến đổi vị trí và tỷ lệ đối xứng (nếu cắm vào nhánh đối xứng)
+  const tf = getPartSlotTransform(part.id, slot.id);
+  part.object.scale.copy(tf.scale);
+  animatePartTo(part.object, tf.pos, 350);
+
+  // Ẩn bệ đỡ trên kệ
+  setShelfPedestalVisible(part.id, false);
+
+  // Cập nhật ẩn/hiện bóng mờ
+  updateGhostVisibility();
+
+  // Âm thanh và thông báo phản hồi sư phạm
+  playSnapSound();
+  if (!part.isCorrect) {
+    showLabAlert(`⚠️ <strong>${part.name}</strong> đã lắp nhưng <strong>sai vị trí giải phẫu</strong>!<br>Dòng máu không thể chảy qua đây. Em hãy kéo đổi lại đúng vị trí.`);
+    if (state.voiceEnabled) {
+      speakText(`${part.name} lắp chưa đúng vị trí giải phẫu, máu không thể lưu thông.`);
+    }
+  }
+
+  // Cập nhật tiến độ
   updateLabProgress();
 
-  // Chọn ngay bộ phận tiếp theo chưa lắp để cập nhật hộp gợi ý
-  const nextUnplaced = Object.values(labState.parts).find(p => !p.assembled);
-  if (nextUnplaced) {
-    selectTrayPart(nextUnplaced.id);
-  } else {
-    // Hoàn thành tất cả 7/7 bộ phận!
-    setTimeout(onAssemblyComplete, 500);
+  // Tự động gợi ý bộ phận tiếp theo nếu lắp đúng
+  if (part.isCorrect) {
+    const nextUnplaced = Object.values(labState.parts).find(p => !p.assembled || !p.isCorrect);
+    if (nextUnplaced) {
+      selectTrayPart(nextUnplaced.id);
+    }
   }
+}
+
+function uninstallPartToShelf(partId) {
+  const part = labState.parts[partId];
+  if (!part) return;
+
+  if (part.currentSlot) {
+    const slot = TARGET_SLOTS[part.currentSlot];
+    if (slot && slot.occupant === partId) {
+      slot.occupant = null;
+    }
+  }
+
+  part.assembled = false;
+  part.isCorrect = false;
+  part.currentSlot = null;
+  part.object.scale.set(1, 1, 1);
+  animatePartTo(part.object, part.puzzleSidePos, 350);
+  setShelfPedestalVisible(part.id, true);
+
+  updateGhostVisibility();
+  updateLabProgress();
+}
+
+function snapPartIntoPlace(partId) {
+  const slotId = 'slot-' + partId;
+  snapPartIntoSlot(partId, slotId);
 }
 
 function animatePartTo(object, targetPos, duration = 400) {
@@ -2400,9 +2664,23 @@ function animatePartTo(object, targetPos, duration = 400) {
 }
 
 function updateLabProgress() {
+  const correctCount = Object.values(labState.parts).filter(p => p.assembled && p.isCorrect).length;
+  const wrongCount = Object.values(labState.parts).filter(p => p.assembled && !p.isCorrect).length;
+  labState.assembledCount = correctCount + wrongCount;
+
   const progText = document.getElementById('lab-progress-text');
   if (progText) {
-    progText.textContent = `Tiến độ: Đã lắp ${labState.assembledCount} / 7 bộ phận`;
+    if (wrongCount > 0) {
+      progText.innerHTML = `Tiến độ: <span style="color: #10b981; font-weight: 700;">Đúng ${correctCount}/7</span> • <span style="color: #fbbf24; font-weight: 700;"><i class="fa-solid fa-triangle-exclamation"></i> Có ${wrongCount} vị trí sai (máu không chảy)</span>`;
+    } else {
+      progText.textContent = `Tiến độ: Đã lắp đúng ${correctCount} / 7 bộ phận`;
+    }
+  }
+
+  renderTrayItems();
+
+  if (correctCount === 7) {
+    setTimeout(onAssemblyComplete, 600);
   }
 }
 
@@ -2615,7 +2893,7 @@ function animate() {
       heartPulseScale = 1.0;
     }
 
-    const isHeartAssembled = !(typeof labState !== 'undefined' && labState.active && labState.mode === 'puzzle') || (labState.parts['heart'] && labState.parts['heart'].assembled);
+    const isHeartAssembled = !(typeof labState !== 'undefined' && labState.active && labState.mode === 'puzzle') || (labState.parts['heart'] && labState.parts['heart'].assembled && labState.parts['heart'].isCorrect);
 
     if (isHeartAssembled) {
       heartGroup.scale.set(heartPulseScale, heartPulseScale * 1.02, heartPulseScale * 0.98);
@@ -2641,7 +2919,7 @@ function animate() {
       arrowTrackers.forEach(item => {
         let isVisible = true;
         if (typeof labState !== 'undefined' && labState.active && labState.mode === 'puzzle') {
-          isVisible = !!(item.partId && labState.parts[item.partId] && labState.parts[item.partId].assembled);
+          isVisible = !!(item.partId && labState.parts[item.partId] && labState.parts[item.partId].assembled && labState.parts[item.partId].isCorrect);
         }
         item.mesh.visible = isVisible;
         if (!isVisible) return;
