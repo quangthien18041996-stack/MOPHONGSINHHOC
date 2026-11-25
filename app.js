@@ -152,8 +152,8 @@ renderer.toneMappingExposure = 1.2;
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.dampingFactor = 0.06;
-controls.minDistance = 6;
-controls.maxDistance = 26;
+controls.minDistance = 4;
+controls.maxDistance = 65;
 controls.maxPolarAngle = Math.PI * 0.85;
 controls.minPolarAngle = Math.PI * 0.15;
 
@@ -1881,8 +1881,8 @@ function enterAssemblyLab() {
   document.getElementById('labels-overlay').style.display = 'none';
   infoDrawer.classList.remove('open');
 
-  // Đưa camera về góc nhìn toàn cảnh rộng rãi
-  animateCameraTo(new THREE.Vector3(0, 0, 19), new THREE.Vector3(0, 0, 0), 600);
+  // Đưa camera về góc nhìn toàn cảnh rộng rãi, vừa vặn toàn bộ mô hình và các chi tiết tháo rời
+  animateCameraTo(new THREE.Vector3(0, 0, 27), new THREE.Vector3(0, 0, 0), 600);
 
   // Mặc định ban đầu vào chế độ Tháo rã Slider
   setLabMode('explode');
@@ -2381,6 +2381,26 @@ if (btnSnapActive) {
     if (labState.selectedPartId) {
       snapPartIntoPlace(labState.selectedPartId);
     }
+  });
+}
+
+const btnLabZoomIn = document.getElementById('btn-lab-zoom-in');
+if (btnLabZoomIn) {
+  btnLabZoomIn.addEventListener('click', () => {
+    const dir = new THREE.Vector3().subVectors(camera.position, controls.target);
+    const newDist = Math.max(controls.minDistance, dir.length() * 0.8);
+    dir.setLength(newDist);
+    animateCameraTo(controls.target.clone().add(dir), controls.target, 250);
+  });
+}
+
+const btnLabZoomOut = document.getElementById('btn-lab-zoom-out');
+if (btnLabZoomOut) {
+  btnLabZoomOut.addEventListener('click', () => {
+    const dir = new THREE.Vector3().subVectors(camera.position, controls.target);
+    const newDist = Math.min(controls.maxDistance, dir.length() * 1.25);
+    dir.setLength(newDist);
+    animateCameraTo(controls.target.clone().add(dir), controls.target, 250);
   });
 }
 
