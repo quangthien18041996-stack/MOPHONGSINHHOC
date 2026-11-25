@@ -243,10 +243,24 @@
 
       <!-- Part Inventory Tray (Khay linh kiện khi ở chế độ Thử thách Lắp ráp) -->
       <div class="lab-parts-tray hidden" id="lab-parts-tray">
-        <div class="tray-title"><i class="fa-solid fa-toolbox"></i> Khay bộ phận cần lắp ráp (Click chọn để lắp):</div>
+        <div class="tray-header-bar">
+          <div class="tray-title">
+            <i class="fa-solid fa-hand-pointer"></i> <span>Kéo thả từng bộ phận vào mô hình 3D</span>
+            <small>(hoặc bấm chọn để ráp)</small>
+          </div>
+          <div class="tray-drag-hint">
+            <i class="fa-solid fa-arrows-up-down-left-right"></i> Giữ chuột & kéo vào mô hình
+          </div>
+        </div>
         <div class="tray-items-grid" id="tray-items-grid">
           <!-- Rendered dynamically -->
         </div>
+      </div>
+
+      <!-- Drop Target Guide Overlay khi đang kéo thả -->
+      <div class="lab-drop-overlay hidden" id="lab-drop-overlay">
+        <i class="fa-solid fa-bullseye"></i>
+        <span>Thả bộ phận vào vị trí khung mờ trên mô hình 3D để ghép!</span>
       </div>
     </div>
   </main>

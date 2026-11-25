@@ -1397,12 +1397,14 @@ body.in-lab-mode .floating-controls {
   font-weight: 700;
   color: #fff;
   letter-spacing: -0.2px;
+  white-space: nowrap;
 }
 
 .lab-title-text span {
   font-size: 11px;
   color: #34d399;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .lab-mode-pills {
@@ -1537,7 +1539,7 @@ body.in-lab-mode .floating-controls {
 /* Clue & Guide Card */
 .lab-clue-card {
   position: absolute;
-  top: 156px;
+  top: 172px;
   left: 24px;
   width: 300px;
   max-width: calc(100vw - 48px);
@@ -1643,6 +1645,37 @@ body.in-lab-mode .floating-controls {
   gap: 6px;
 }
 
+.tray-title small {
+  color: #94a3b8;
+  font-weight: 500;
+  text-transform: none;
+}
+
+.tray-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tray-drag-hint {
+  font-size: 11px;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  animation: pulseHint 2s infinite ease-in-out;
+}
+
+@keyframes pulseHint {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.03); }
+}
+
 .tray-items-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -1654,13 +1687,65 @@ body.in-lab-mode .floating-controls {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 8px 10px;
-  cursor: pointer;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 4px;
-  transition: all 0.2s ease;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+
+.tray-item-card:active {
+  cursor: grabbing;
+}
+
+.tray-item-card.dragging {
+  opacity: 0.35;
+  border-color: #10b981;
+  transform: scale(0.92);
+}
+
+.tray-grip {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.lab-drop-overlay {
+  position: absolute;
+  top: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(16, 185, 129, 0.22);
+  border: 1.5px dashed #10b981;
+  border-radius: var(--radius-full);
+  padding: 8px 22px;
+  color: #34d399;
+  font-size: 12.5px;
+  font-weight: 700;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 25px rgba(16, 185, 129, 0.35);
+  pointer-events: none;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: dropPulse 1.4s infinite ease-in-out;
+}
+
+.lab-drop-overlay.hidden {
+  display: none !important;
+}
+
+@keyframes dropPulse {
+  0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.9; }
+  50% { transform: translateX(-50%) scale(1.04); opacity: 1; }
 }
 
 .tray-item-card:hover {
@@ -1855,7 +1940,7 @@ body.in-lab-mode .floating-controls {
     font-size: 11px;
   }
   .lab-clue-card {
-    top: 154px;
+    top: 168px;
     left: 14px;
     width: 270px;
     padding: 10px 14px;

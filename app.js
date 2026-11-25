@@ -1982,6 +1982,160 @@ function startPuzzleChallenge() {
   selectTrayPart('heart');
 }
 
+// ================= DRAG & DROP KHAY LINH KIỆN VÀ MÔ HÌNH 3D =================
+const dragPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+const dragRaycaster = new THREE.Raycaster();
+const dragPlaneIntersect = new THREE.Vector3();
+let activeDragPart = null;
+
+function get3DWorldPos(clientX, clientY) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return null;
+  const ndcX = ((clientX - rect.left) / rect.width) * 2 - 1;
+  const ndcY = -((clientY - rect.top) / rect.height) * 2 + 1;
+  dragRaycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
+  if (dragRaycaster.ray.intersectPlane(dragPlane, dragPlaneIntersect)) {
+    return dragPlaneIntersect.clone();
+  }
+  return null;
+}
+
+function showDropOverlay(show = true) {
+  const overlay = document.getElementById('lab-drop-overlay');
+  if (overlay) overlay.classList.toggle('hidden', !show);
+}
+
+function handleDragMove(clientX, clientY) {
+  if (!activeDragPart) return;
+  const worldPos = get3DWorldPos(clientX, clientY);
+  if (!worldPos) return;
+
+  // Di chuyển bộ phận 3D trực tiếp theo con trỏ chuột
+  activeDragPart.object.position.set(worldPos.x, worldPos.y, activeDragPart.originPos.z + 0.3);
+
+  // Kiểm tra cự ly tới vị trí khung mờ (socket) mục tiêu
+  const dist = worldPos.distanceTo(activeDragPart.originPos);
+  if (dist < 3.2) {
+    setGhostHighlight(activeDragPart.ghost, 0x00e676, 1.0);
+  } else {
+    setGhostHighlight(activeDragPart.ghost, activeDragPart.color, 0.4);
+  }
+}
+
+function handleDragEnd(clientX, clientY) {
+  if (!activeDragPart) return;
+  const part = activeDragPart;
+  activeDragPart = null;
+  controls.enabled = true;
+  showDropOverlay(false);
+
+  const rect = renderer.domElement.getBoundingClientRect();
+  const insideCanvas = clientX >= rect.left && clientX <= rect.right &&
+                       clientY >= rect.top && clientY <= rect.bottom;
+
+  const worldPos = get3DWorldPos(clientX, clientY);
+  const dist = worldPos ? worldPos.distanceTo(part.originPos) : 999;
+
+  // Nếu thả vào gần socket (cự ly < 5.5) hoặc thả lên vùng hiển thị 3D (phía trên khay)
+  if (insideCanvas && (dist < 5.5 || clientY < rect.bottom - 120)) {
+    snapPartIntoPlace(part.id);
+  } else {
+    // Trả về vị trí tháo rời ban đầu
+    animatePartTo(part.object, part.originPos.clone().add(part.explodeOffset), 280);
+    setGhostHighlight(part.ghost, part.color, 0.25);
+  }
+}
+
+// Bắt sự kiện kéo thả toàn cục cho HTML5 Drag & Drop
+window.addEventListener('dragover', (e) => {
+  if (activeDragPart) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    handleDragMove(e.clientX, e.clientY);
+  }
+});
+
+window.addEventListener('drop', (e) => {
+  if (activeDragPart) {
+    e.preventDefault();
+    handleDragEnd(e.clientX, e.clientY);
+  }
+});
+
+function setupCardDragDrop(card, part) {
+  card.addEventListener('dragstart', (e) => {
+    if (part.assembled) return;
+    activeDragPart = part;
+    controls.enabled = false;
+    card.classList.add('dragging');
+    selectTrayPart(part.id);
+    showDropOverlay(true);
+    e.dataTransfer.setData('text/plain', part.id);
+    e.dataTransfer.effectAllowed = 'copyMove';
+
+    // Tạo hình preview trong suốt để vật thể 3D trực tiếp di chuyển theo chuột
+    const transparentImg = new Image();
+    transparentImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    e.dataTransfer.setDragImage(transparentImg, 0, 0);
+  });
+
+  card.addEventListener('dragend', (e) => {
+    card.classList.remove('dragging');
+    if (activeDragPart) {
+      handleDragEnd(e.clientX, e.clientY);
+    }
+  });
+}
+
+function setupCardPointerDrag(card, part) {
+  let isDown = false;
+  let didMove = false;
+  let startX = 0;
+  let startY = 0;
+
+  card.addEventListener('pointerdown', (e) => {
+    if (part.assembled) return;
+    isDown = true;
+    didMove = false;
+    startX = e.clientX;
+    startY = e.clientY;
+  });
+
+  card.addEventListener('pointermove', (e) => {
+    if (!isDown) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (!didMove && Math.hypot(dx, dy) > 8) {
+      didMove = true;
+      card._wasDragged = true;
+      activeDragPart = part;
+      controls.enabled = false;
+      card.classList.add('dragging');
+      try { card.setPointerCapture(e.pointerId); } catch(err) {}
+      selectTrayPart(part.id);
+      showDropOverlay(true);
+    }
+
+    if (didMove && activeDragPart === part) {
+      handleDragMove(e.clientX, e.clientY);
+    }
+  });
+
+  const onPointerUp = (e) => {
+    if (!isDown) return;
+    isDown = false;
+    if (didMove) {
+      try { card.releasePointerCapture(e.pointerId); } catch(err) {}
+      card.classList.remove('dragging');
+      handleDragEnd(e.clientX, e.clientY);
+      setTimeout(() => { card._wasDragged = false; }, 120);
+    }
+  };
+
+  card.addEventListener('pointerup', onPointerUp);
+  card.addEventListener('pointercancel', onPointerUp);
+}
+
 function renderTrayItems() {
   const grid = document.getElementById('tray-items-grid');
   if (!grid) return;
@@ -1991,23 +2145,32 @@ function renderTrayItems() {
     const card = document.createElement('div');
     card.className = `tray-item-card ${part.assembled ? 'placed' : ''} ${labState.selectedPartId === part.id ? 'selected' : ''}`;
     card.dataset.id = part.id;
+    if (!part.assembled) {
+      card.setAttribute('draggable', 'true');
+    }
     card.innerHTML = `
+      <i class="fa-solid fa-grip-vertical tray-grip" title="Kéo thả vào mô hình"></i>
       <div class="tray-item-icon" style="background: ${part.color}">
         <i class="fa-solid ${part.icon}"></i>
       </div>
       <span class="tray-item-name">${part.name}</span>
     `;
 
+    // Nhấp chọn hoặc nhấp đúp để tự động lắp
     card.addEventListener('click', () => {
-      if (!part.assembled) {
-        if (labState.selectedPartId === part.id) {
-          // Bấm lần thứ hai vào thẻ đang chọn sẽ tự động ráp vào mô hình
-          snapPartIntoPlace(part.id);
-        } else {
-          selectTrayPart(part.id);
-        }
+      if (part.assembled || card._wasDragged) return;
+      if (labState.selectedPartId === part.id) {
+        snapPartIntoPlace(part.id);
+      } else {
+        selectTrayPart(part.id);
       }
     });
+
+    // Kéo thả HTML5
+    setupCardDragDrop(card, part);
+
+    // Kéo thả cảm ứng Touch / Pointer
+    setupCardPointerDrag(card, part);
 
     grid.appendChild(card);
   });
@@ -2065,15 +2228,13 @@ function snapPartIntoPlace(partId) {
   renderTrayItems();
   updateLabProgress();
 
-  // Chọn bộ phận tiếp theo chưa lắp
+  // Chọn ngay bộ phận tiếp theo chưa lắp để cập nhật hộp gợi ý
   const nextUnplaced = Object.values(labState.parts).find(p => !p.assembled);
   if (nextUnplaced) {
-    setTimeout(() => {
-      selectTrayPart(nextUnplaced.id);
-    }, 500);
+    selectTrayPart(nextUnplaced.id);
   } else {
     // Hoàn thành tất cả 7/7 bộ phận!
-    setTimeout(onAssemblyComplete, 600);
+    setTimeout(onAssemblyComplete, 500);
   }
 }
 
@@ -2148,6 +2309,50 @@ function handleLab3DClick() {
     }
   }
 }
+
+// Bắt sự kiện kéo thả trực tiếp vật thể 3D trên màn hình canvas
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  if (!labState.active || labState.mode !== 'puzzle') return;
+
+  const rect = renderer.domElement.getBoundingClientRect();
+  const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+  const ndcY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+  dragRaycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
+  const partHits = dragRaycaster.intersectObjects(interactiveObjects, true);
+
+  if (partHits.length > 0) {
+    let hit = partHits[0].object;
+    while (hit && !hit.userData.id && hit.parent) hit = hit.parent;
+    if (hit && hit.userData.id && labState.parts[hit.userData.id]) {
+      const part = labState.parts[hit.userData.id];
+      if (!part.assembled) {
+        activeDragPart = part;
+        controls.enabled = false;
+        selectTrayPart(part.id);
+        showDropOverlay(true);
+        try { renderer.domElement.setPointerCapture(e.pointerId); } catch(err) {}
+
+        const onSceneMove = (ev) => {
+          if (activeDragPart === part) {
+            handleDragMove(ev.clientX, ev.clientY);
+          }
+        };
+
+        const onSceneUp = (ev) => {
+          renderer.domElement.removeEventListener('pointermove', onSceneMove);
+          renderer.domElement.removeEventListener('pointerup', onSceneUp);
+          renderer.domElement.removeEventListener('pointercancel', onSceneUp);
+          try { renderer.domElement.releasePointerCapture(ev.pointerId); } catch(err) {}
+          handleDragEnd(ev.clientX, ev.clientY);
+        };
+
+        renderer.domElement.addEventListener('pointermove', onSceneMove);
+        renderer.domElement.addEventListener('pointerup', onSceneUp);
+        renderer.domElement.addEventListener('pointercancel', onSceneUp);
+      }
+    }
+  }
+});
 
 // Gắn sự kiện các nút điều khiển trong Phòng Tháo Lắp
 document.getElementById('btn-assembly-lab').addEventListener('click', enterAssemblyLab);
