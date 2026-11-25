@@ -2149,7 +2149,7 @@ function get3DWorldPos(clientX, clientY) {
   return null;
 }
 
-function showDropOverlay(show = true) {
+function showDropOverlay(show = false) {
   const overlay = document.getElementById('lab-drop-overlay');
   if (overlay) overlay.classList.toggle('hidden', !show);
 }
@@ -2161,14 +2161,6 @@ function handleDragMove(clientX, clientY) {
 
   // Di chuyển bộ phận 3D trực tiếp theo con trỏ chuột
   activeDragPart.object.position.set(worldPos.x, worldPos.y, activeDragPart.originPos.z + 0.3);
-
-  // Kiểm tra cự ly tới vị trí khung mờ (socket) mục tiêu
-  const dist = worldPos.distanceTo(activeDragPart.originPos);
-  if (dist < 3.2) {
-    setGhostHighlight(activeDragPart.ghost, 0x00e676, 1.0);
-  } else {
-    setGhostHighlight(activeDragPart.ghost, activeDragPart.color, 0.4);
-  }
 }
 
 function handleDragEnd(clientX, clientY) {
