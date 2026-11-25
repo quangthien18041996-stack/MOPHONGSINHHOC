@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mô Phỏng 3D Hệ Tuần Hoàn Máu Người - Giáo Dục Trực Quan</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="lib/font-awesome.min.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header Bar -->
+  <header class="top-nav">
+    <div class="logo-area">
+      <div class="pulse-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+      <div class="title-wrap">
+        <h1>Mô Phỏng 3D Hệ Tuần Hoàn Máu</h1>
+        <p class="subtitle">Vòng tuần hoàn nhỏ (Phổi) & Vòng tuần hoàn lớn (Cơ quan)</p>
+      </div>
+    </div>
+
+    <!-- View Mode Pills -->
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="all" title="Xem toàn bộ hệ tuần hoàn">
+        <i class="fa-solid fa-arrows-spin"></i> Toàn bộ
+      </button>
+      <button class="mode-btn" data-mode="pulmonary" title="Tập trung vào Vòng tuần hoàn nhỏ">
+        <i class="fa-solid fa-lungs"></i> Vòng tuần hoàn nhỏ
+      </button>
+      <button class="mode-btn" data-mode="systemic" title="Tập trung vào Vòng tuần hoàn lớn">
+        <i class="fa-solid fa-person"></i> Vòng tuần hoàn lớn
+      </button>
+      <button class="mode-btn" data-mode="heart" title="Cận cảnh 4 ngăn của tim">
+        <i class="fa-solid fa-heart"></i> Cận cảnh Tim
+      </button>
+    </div>
+
+    <!-- Header Actions -->
+    <div class="header-actions">
+      <button id="btn-blood-comp" class="btn-primary" title="Khám phá các thành phần của máu">
+        <i class="fa-solid fa-microscope"></i> Thành phần máu
+      </button>
+      <button id="btn-sound" class="btn-icon" title="Bật/Tắt âm thanh nhịp tim">
+        <i class="fa-solid fa-volume-xmark"></i>
+      </button>
+      <button id="btn-reset-cam" class="btn-icon" title="Đặt lại góc nhìn 3D">
+        <i class="fa-solid fa-rotate-left"></i>
+      </button>
+      <button id="btn-help" class="btn-icon" title="Hướng dẫn sử dụng">
+        <i class="fa-solid fa-circle-question"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- 3D Canvas Container -->
+  <main id="canvas-container">
+    <canvas id="webgl-canvas"></canvas>
+
+    <!-- Overlay 2D Labels on 3D objects -->
+    <div id="labels-overlay"></div>
+
+    <!-- Color Legend & Flow Guide -->
+    <div class="legend-card">
+      <div class="legend-title"><i class="fa-solid fa-palette"></i> Chú Giải Màu Sắc Máu</div>
+      <div class="legend-item">
+        <span class="color-dot red"></span>
+        <div class="legend-text">
+          <strong>Máu đỏ tươi</strong>
+          <span>Giàu Oxy (O₂), ít CO₂</span>
+        </div>
+      </div>
+      <div class="legend-item">
+        <span class="color-dot blue"></span>
+        <div class="legend-text">
+          <strong>Máu đỏ thẫm (xanh)</strong>
+          <span>Giàu CO₂, nghèo Oxy (O₂)</span>
+        </div>
+      </div>
+      <div class="legend-item">
+        <span class="color-dot purple"></span>
+        <div class="legend-text">
+          <strong>Lưới mao mạch (tím)</strong>
+          <span>Nơi diễn ra trao đổi chất & khí</span>
+        </div>
+      </div>
+      <div class="legend-divider"></div>
+      <div class="legend-hint">
+        <i class="fa-solid fa-hand-pointer"></i> <em>Click vào bất kỳ bộ phận nào để xem giải thích chi tiết!</em>
+      </div>
+    </div>
+
+    <!-- Floating Playback / Speed Control Bar -->
+    <div class="floating-controls">
+      <div class="control-group">
+        <button id="btn-play-pause" class="ctrl-btn" title="Tạm dừng / Tiếp tục">
+          <i class="fa-solid fa-pause"></i>
+        </button>
+        <div class="speed-buttons">
+          <button class="speed-btn" data-speed="0.5">0.5x</button>
+          <button class="speed-btn active" data-speed="1.0">1.0x</button>
+          <button class="speed-btn" data-speed="2.0">2.0x</button>
+        </div>
+      </div>
+
+      <div class="divider-v"></div>
+
+      <div class="control-group">
+        <label class="toggle-control" title="Hiện tế bào máu (Hồng cầu)">
+          <input type="checkbox" id="toggle-cells" checked>
+          <span class="toggle-slider"></span>
+          <span class="toggle-label"><i class="fa-solid fa-droplet"></i> Tế bào máu</span>
+        </label>
+        <label class="toggle-control" title="Hiện mũi tên chỉ hướng dòng chảy">
+          <input type="checkbox" id="toggle-arrows" checked>
+          <span class="toggle-slider"></span>
+          <span class="toggle-label"><i class="fa-solid fa-arrow-trend-up"></i> Mũi tên</span>
+        </label>
+        <label class="toggle-control" title="Hiện nhãn tên 3D">
+          <input type="checkbox" id="toggle-labels" checked>
+          <span class="toggle-slider"></span>
+          <span class="toggle-label"><i class="fa-solid fa-tag"></i> Nhãn chú thích</span>
+        </label>
+        <label class="toggle-control" title="Hiển thị buồng tim bán trong suốt">
+          <input type="checkbox" id="toggle-transparent">
+          <span class="toggle-slider"></span>
+          <span class="toggle-label"><i class="fa-solid fa-eye"></i> Nhìn thấu tim</span>
+        </label>
+        <label class="toggle-control" title="Tự động đọc giọng nói thuyết minh khi chọn bộ phận">
+          <input type="checkbox" id="toggle-voice" checked>
+          <span class="toggle-slider"></span>
+          <span class="toggle-label"><i class="fa-solid fa-headset"></i> Đọc giọng nói</span>
+        </label>
+      </div>
+
+      <div class="divider-v"></div>
+
+      <!-- Comparison with Original Book Diagram Button -->
+      <button id="btn-compare-diagram" class="ctrl-btn-text" title="Xem sơ đồ gốc SGK">
+        <i class="fa-solid fa-image"></i> Đối chiếu SGK
+      </button>
+    </div>
+
+    <!-- Quick Navigation Pills on Canvas -->
+    <div class="quick-nav">
+      <div class="quick-nav-pill special-comp-pill" id="quick-blood-comp" title="Khám phá các thành phần của máu">
+        <i class="fa-solid fa-vial-virus" style="color: #ffb300;"></i> Thành phần máu
+      </div>
+      <div class="quick-nav-pill" data-target="capillaries-lungs">
+        <i class="fa-solid fa-lungs"></i> Mao mạch phổi
+      </div>
+      <div class="quick-nav-pill" data-target="artery-pulmonary">
+        <i class="fa-solid fa-arrow-up"></i> ĐM phổi
+      </div>
+      <div class="quick-nav-pill" data-target="vein-pulmonary">
+        <i class="fa-solid fa-arrow-down"></i> TM phổi
+      </div>
+      <div class="quick-nav-pill" data-target="heart">
+        <i class="fa-solid fa-heart"></i> Tim (4 ngăn)
+      </div>
+      <div class="quick-nav-pill" data-target="artery-systemic">
+        <i class="fa-solid fa-arrow-down"></i> Động mạch
+      </div>
+      <div class="quick-nav-pill" data-target="vein-systemic">
+        <i class="fa-solid fa-arrow-up"></i> Tĩnh mạch
+      </div>
+      <div class="quick-nav-pill" data-target="capillaries-body">
+        <i class="fa-solid fa-network-wired"></i> Mao mạch cơ quan
+      </div>
+    </div>
+  </main>
+
+  <!-- Side Detail Drawer / Information Panel -->
+  <aside id="info-drawer" class="info-drawer">
+    <div class="drawer-header">
+      <div class="drawer-title-wrap">
+        <div class="drawer-title-top">
+          <span class="badge" id="drawer-badge">VÒNG TUẦN HOÀN</span>
+          <button id="btn-speak-toggle" class="btn-speak" title="Bấm để nghe hoặc dừng giọng đọc thuyết minh">
+            <i class="fa-solid fa-volume-high"></i>
+            <span id="speak-btn-text">Đọc nội dung</span>
+          </button>
+        </div>
+        <h2 id="drawer-title">Chọn một bộ phận</h2>
+      </div>
+      <button id="drawer-close" class="btn-icon" title="Đóng bảng"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    
+    <div class="drawer-body" id="drawer-content">
+      <div class="empty-state">
+        <i class="fa-solid fa-hand-pointer pulse-soft"></i>
+        <p>Bấm trực tiếp vào các mạch máu, buồng tim hoặc phế nang mao mạch trên mô hình 3D để xem phân tích chi tiết đường đi của dòng máu.</p>
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <div class="flow-indicator" id="flow-indicator">
+        <div class="flow-step from" id="flow-from">--</div>
+        <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+        <div class="flow-step current" id="flow-current">--</div>
+        <div class="flow-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+        <div class="flow-step to" id="flow-to">--</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Blood Components Modal -->
+  <div id="blood-comp-modal" class="modal-backdrop hidden">
+    <div class="modal-card blood-comp-card-modal">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-vial-virus"></i>
+          <h3>Các Thành Phần Của Máu Trong Mạch Máu</h3>
+        </div>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button id="btn-comp-speak-all" class="btn-speak" title="Nghe thuyết minh toàn bộ thành phần máu">
+            <i class="fa-solid fa-volume-high"></i> <span>Nghe thuyết minh</span>
+          </button>
+          <button id="blood-comp-close" class="btn-icon" title="Đóng"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </div>
+      <div class="modal-body blood-comp-body">
+        <div class="blood-comp-left">
+          <!-- View switcher tabs -->
+          <div class="blood-view-tabs">
+            <button class="blood-tab-btn active" data-tab="3d" id="tab-btn-3d">
+              <i class="fa-solid fa-cube"></i> Mô hình 3D tương tác
+            </button>
+            <button class="blood-tab-btn" data-tab="2d" id="tab-btn-2d">
+              <i class="fa-solid fa-image"></i> Đối chiếu sơ đồ SGK
+            </button>
+          </div>
+
+          <!-- 3D View Container -->
+          <div id="blood-3d-wrapper" class="blood-view-content active">
+            <!-- 3D scene selector pills -->
+            <div class="blood-3d-modes">
+              <button class="b3d-btn active" data-model="vessel" title="Lát cắt lòng mạch máu dưới kính hiển vi">
+                <i class="fa-solid fa-microscope"></i> Lát cắt mạch máu
+              </button>
+              <button class="b3d-btn" data-model="tube" title="Ống máu ly tâm phân tầng">
+                <i class="fa-solid fa-vial"></i> Ống ly tâm
+              </button>
+              <button class="b3d-btn" data-model="rbc" title="Cận cảnh tế bào Hồng cầu 3D">
+                🔴 Hồng cầu
+              </button>
+              <button class="b3d-btn" data-model="wbc" title="Cận cảnh tế bào Bạch cầu 3D">
+                ⚪ Bạch cầu
+              </button>
+              <button class="b3d-btn" data-model="platelet" title="Cận cảnh Tiểu cầu 3D">
+                🟣 Tiểu cầu
+              </button>
+            </div>
+            
+            <div class="canvas-3d-box">
+              <canvas id="blood-3d-canvas"></canvas>
+              <div class="b3d-hint">
+                <i class="fa-solid fa-arrows-spin"></i> Giữ chuột để xoay 360° | Cuộn để phóng to/thu nhỏ
+              </div>
+            </div>
+          </div>
+
+          <!-- 2D SGK Image Container -->
+          <div id="blood-2d-wrapper" class="blood-view-content">
+            <div class="blood-comp-img-wrap">
+              <img src="assets/blood_components.png" alt="Sơ đồ thành phần máu" id="blood-comp-img">
+            </div>
+            <div class="blood-comp-caption">
+              <small><i class="fa-solid fa-circle-info"></i> Sơ đồ SGK: Ống máu ly tâm phân tầng & Lát cắt mạch máu dưới kính hiển vi</small>
+            </div>
+          </div>
+        </div>
+        <div class="blood-comp-right">
+          <div class="comp-list">
+            <!-- 1. Huyết tương -->
+            <div class="comp-item" data-comp="plasma">
+              <div class="comp-item-header">
+                <div class="comp-badge yellow">55% Thể tích máu</div>
+                <h4>4. Huyết tương (Plasma)</h4>
+              </div>
+              <p class="comp-desc">Chất lỏng màu vàng nhạt gồm 90% là nước và 10% các chất hòa tan (chất dinh dưỡng, protein, kháng thể, hormone, muối khoáng, chất thải).</p>
+              <div class="comp-role"><strong>Chức năng:</strong> Duy trì máu ở trạng thái lỏng để lưu thông trong mạch máu, vận chuyển chất dinh dưỡng, hormone và điều hòa nhiệt độ.</div>
+            </div>
+
+            <!-- 2. Hồng cầu -->
+            <div class="comp-item active" data-comp="rbc">
+              <div class="comp-item-header">
+                <div class="comp-badge red">~45% Thể tích (2)</div>
+                <h4>2. Hồng cầu (Erythrocytes)</h4>
+              </div>
+              <p class="comp-desc">Tế bào hình đĩa lõm 2 mặt, không có nhân (ở người trưởng thành), chứa huyết sắc tố <strong>Hemoglobin (Hb)</strong> có màu đỏ.</p>
+              <div class="comp-role"><strong>Chức năng:</strong> Kết hợp với O₂ tại phổi tạo máu đỏ tươi đi nuôi tế bào; kết hợp với CO₂ tại tế bào tạo máu đỏ thẫm về phổi đào thải.</div>
+            </div>
+
+            <!-- 3. Bạch cầu -->
+            <div class="comp-item" data-comp="wbc">
+              <div class="comp-item-header">
+                <div class="comp-badge blue">&lt; 1% Thể tích (3)</div>
+                <h4>3. Bạch cầu (Leukocytes)</h4>
+              </div>
+              <p class="comp-desc">Tế bào trong suốt có kích thước lớn nhất trong máu, có nhân (hình hạt đậu hoặc nhiều múi), có thể biến đổi hình dạng và xuyên qua thành mạch.</p>
+              <div class="comp-role"><strong>Chức năng:</strong> Hệ thống miễn dịch bảo vệ cơ thể thông qua cơ chế thực bào (bắt nuốt vi khuẩn) và tiết kháng thể vô hiệu hóa mầm bệnh.</div>
+            </div>
+
+            <!-- 4. Tiểu cầu -->
+            <div class="comp-item" data-comp="platelet">
+              <div class="comp-item-header">
+                <div class="comp-badge purple">&lt; 1% Thể tích (1)</div>
+                <h4>1. Tiểu cầu (Thrombocytes)</h4>
+              </div>
+              <p class="comp-desc">Các mảnh tế bào chất nhỏ hình sao hoặc bầu dục, không nhân, sinh ra từ tủy xương và rất dễ vỡ khi tiếp xúc vết rách thành mạch.</p>
+              <div class="comp-role"><strong>Chức năng:</strong> Giải phóng enzyme tạo mạng lưới sợi Fibrin giữ tế bào máu, hình thành cục máu đông bịt kín vết thương để cầm máu.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Original Book Diagram Modal for Comparison -->
+  <div id="diagram-modal" class="modal-backdrop hidden">
+    <div class="modal-card diagram-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-book-open"></i>
+          <h3>Sơ đồ gốc trong Sách Giáo Khoa</h3>
+        </div>
+        <button id="diagram-close" class="btn-icon"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body diagram-body">
+        <div class="diagram-img-wrap">
+          <img src="assets/diagram.jpg" alt="Sơ đồ Hệ tuần hoàn SGK" id="original-diagram-img">
+        </div>
+        <div class="diagram-notes">
+          <h4><i class="fa-solid fa-clipboard-check"></i> Các điểm kiến thức trọng tâm cần nhớ:</h4>
+          <ul>
+            <li><strong>Vòng tuần hoàn nhỏ:</strong> Khởi đầu từ <em>Tâm thất phải</em> ➔ qua <em>Động mạch phổi</em> ➔ đến <em>Mao mạch phổi</em> (thải CO₂, nhận O₂) ➔ theo <em>Tĩnh mạch phổi</em> ➔ về <em>Tâm nhĩ trái</em>.</li>
+            <li><strong>Vòng tuần hoàn lớn:</strong> Khởi đầu từ <em>Tâm thất trái</em> ➔ qua <em>Động mạch (chủ)</em> ➔ đến <em>Mao mạch ở các cơ quan</em> (cung cấp O₂ & dinh dưỡng, nhận CO₂) ➔ theo <em>Tĩnh mạch</em> ➔ về <em>Tâm nhĩ phải</em>.</li>
+            <li><strong>Quy ước màu sắc:</strong> Màu đỏ biểu thị máu đỏ tươi giàu O₂; Màu xanh biểu thị máu đỏ thẫm giàu CO₂; Màu tím là mao mạch diễn ra sự biến đổi chất.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help / Instructions Modal -->
+  <div id="help-modal" class="modal-backdrop hidden">
+    <div class="modal-card help-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <i class="fa-solid fa-circle-info"></i>
+          <h3>Hướng Dẫn Thao Tác 3D Cho Giáo Viên & Học Sinh</h3>
+        </div>
+        <button id="help-close" class="btn-icon"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="help-grid">
+          <div class="help-item">
+            <div class="help-icon"><i class="fa-solid fa-computer-mouse"></i></div>
+            <h4>Xoay góc nhìn 3D</h4>
+            <p>Nhấn và giữ chuột trái (hoặc 1 ngón tay trên màn cảm ứng) rồi di chuyển để xoay không gian 360 độ.</p>
+          </div>
+          <div class="help-item">
+            <div class="help-icon"><i class="fa-solid fa-magnifying-glass-plus"></i></div>
+            <h4>Phóng to / Thu nhỏ</h4>
+            <p>Cuộn con lăn chuột (hoặc chụm 2 ngón tay) để quan sát chi tiết bên trong buồng tim hay lưới mao mạch.</p>
+          </div>
+          <div class="help-item">
+            <div class="help-icon"><i class="fa-solid fa-arrows-up-down-left-right"></i></div>
+            <h4>Di chuyển vị trí (Pan)</h4>
+            <p>Nhấn giữ chuột phải (hoặc 2 ngón tay trượt) để dịch chuyển camera lên/xuống/trái/phải.</p>
+          </div>
+          <div class="help-item">
+            <div class="help-icon"><i class="fa-solid fa-hand-pointer"></i></div>
+            <h4>Tương tác bài học</h4>
+            <p>Nhấp vào bất kỳ đoạn mạch máu, mao mạch hoặc buồng tim để mở bảng thuyết minh kiến thức chuyên sâu.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="lib/three.min.js"></script>
+  <script src="lib/OrbitControls.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
