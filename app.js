@@ -2306,14 +2306,10 @@ function renderTrayItems() {
       <span class="tray-item-name">${part.name}</span>
     `;
 
-    // Nhấp chọn hoặc nhấp đúp để tự động lắp
+    // Nhấp chọn xem thông tin & phát sáng vị trí đích (học sinh phải tự kéo thả mới lắp ráp được)
     card.addEventListener('click', () => {
-      if (part.assembled || card._wasDragged) return;
-      if (labState.selectedPartId === part.id) {
-        snapPartIntoPlace(part.id);
-      } else {
-        selectTrayPart(part.id);
-      }
+      if (card._wasDragged) return;
+      selectTrayPart(part.id);
     });
 
     // Kéo thả HTML5
@@ -2432,27 +2428,26 @@ function onAssemblyComplete() {
   }
 }
 
+let _justDragged3D = false;
+
 function handleLab3DClick() {
+  if (_justDragged3D) return;
+
   const labRay = new THREE.Raycaster();
   labRay.setFromCamera(mouse, camera);
 
-  // Kiểm tra click vào bóng mờ vị trí mục tiêu
+  // Kiểm tra click vào bóng mờ vị trí mục tiêu: chỉ chọn xem gợi ý, không tự động ráp
   const ghostHits = labRay.intersectObjects(scene.getObjectByName('assemblyGhostGroup')?.children || [], true);
   if (ghostHits.length > 0) {
     let hit = ghostHits[0].object;
     while (hit && !hit.userData.partId && hit.parent) hit = hit.parent;
     if (hit && hit.userData.partId) {
-      const clickedPartId = hit.userData.partId;
-      if (labState.selectedPartId === clickedPartId) {
-        snapPartIntoPlace(clickedPartId);
-      } else {
-        selectTrayPart(clickedPartId);
-      }
+      selectTrayPart(hit.userData.partId);
       return;
     }
   }
 
-  // Kiểm tra click vào chính bộ phận đang nằm ở vị trí tháo rời
+  // Kiểm tra click vào chính bộ phận đang nằm ở kệ: chỉ chọn xem vị trí, không tự động ráp
   const partHits = labRay.intersectObjects(interactiveObjects, true);
   if (partHits.length > 0) {
     let hit = partHits[0].object;
@@ -2460,17 +2455,13 @@ function handleLab3DClick() {
     if (hit && hit.userData.id) {
       const pId = hit.userData.id;
       if (labState.parts[pId]) {
-        if (!labState.parts[pId].assembled) {
-          snapPartIntoPlace(pId);
-        } else {
-          selectTrayPart(pId);
-        }
+        selectTrayPart(pId);
       }
     }
   }
 }
 
-// Bắt sự kiện kéo thả trực tiếp vật thể 3D trên màn hình canvas
+// Bắt sự kiện kéo thả trực tiếp vật thể 3D trên màn hình canvas (học sinh phải chủ động kéo sang khung đích)
 renderer.domElement.addEventListener('pointerdown', (e) => {
   if (!labState.active || labState.mode !== 'puzzle') return;
 
@@ -2486,14 +2477,22 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
     if (hit && hit.userData.id && labState.parts[hit.userData.id]) {
       const part = labState.parts[hit.userData.id];
       if (!part.assembled) {
-        activeDragPart = part;
-        controls.enabled = false;
         selectTrayPart(part.id);
-        showDropOverlay(true);
-        try { renderer.domElement.setPointerCapture(e.pointerId); } catch(err) {}
+        const startX = e.clientX;
+        const startY = e.clientY;
+        let isDragging = false;
 
         const onSceneMove = (ev) => {
-          if (activeDragPart === part) {
+          const dx = ev.clientX - startX;
+          const dy = ev.clientY - startY;
+          if (!isDragging && Math.hypot(dx, dy) > 6) {
+            isDragging = true;
+            activeDragPart = part;
+            controls.enabled = false;
+            showDropOverlay(true);
+            try { renderer.domElement.setPointerCapture(e.pointerId); } catch(err) {}
+          }
+          if (isDragging && activeDragPart === part) {
             handleDragMove(ev.clientX, ev.clientY);
           }
         };
@@ -2502,8 +2501,12 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
           renderer.domElement.removeEventListener('pointermove', onSceneMove);
           renderer.domElement.removeEventListener('pointerup', onSceneUp);
           renderer.domElement.removeEventListener('pointercancel', onSceneUp);
-          try { renderer.domElement.releasePointerCapture(ev.pointerId); } catch(err) {}
-          handleDragEnd(ev.clientX, ev.clientY);
+          if (isDragging) {
+            _justDragged3D = true;
+            setTimeout(() => { _justDragged3D = false; }, 200);
+            try { renderer.domElement.releasePointerCapture(ev.pointerId); } catch(err) {}
+            handleDragEnd(ev.clientX, ev.clientY);
+          }
         };
 
         renderer.domElement.addEventListener('pointermove', onSceneMove);
@@ -2542,14 +2545,6 @@ if (explodeSlider) {
   });
 }
 
-const btnSnapActive = document.getElementById('btn-snap-active');
-if (btnSnapActive) {
-  btnSnapActive.addEventListener('click', () => {
-    if (labState.selectedPartId) {
-      snapPartIntoPlace(labState.selectedPartId);
-    }
-  });
-}
 
 const btnLabZoomIn = document.getElementById('btn-lab-zoom-in');
 if (btnLabZoomIn) {
