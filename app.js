@@ -1694,7 +1694,7 @@ document.getElementById('drawer-close').addEventListener('click', () => {
 // --- 17. PHÒNG THỰC HÀNH THÁO LẮP 3D (ASSEMBLY LAB) ---
 const labState = {
   active: false,
-  mode: 'explode', // 'explode' or 'puzzle'
+  mode: 'puzzle', // 'puzzle' or 'explode'
   explodeFactor: 0.0,
   selectedPartId: 'heart',
   assembledCount: 7,
@@ -2002,10 +2002,10 @@ function enterAssemblyLab() {
   infoDrawer.classList.remove('open');
 
   // Đưa camera về góc nhìn toàn cảnh rộng rãi, vừa vặn toàn bộ mô hình và các chi tiết tháo rời
-  animateCameraTo(new THREE.Vector3(0, 0, 27), new THREE.Vector3(0, 0, 0), 600);
+  animateCameraTo(new THREE.Vector3(2.5, 0, 31), new THREE.Vector3(2.5, 0, 0), 600);
 
-  // Mặc định ban đầu vào chế độ Tháo rã Slider
-  setLabMode('explode');
+  // Mặc định ban đầu vào chế độ Thử thách Lắp ráp 3D
+  setLabMode('puzzle');
 
   if (state.voiceEnabled) {
     speakText('Chào mừng các em đến với Phòng thực hành tháo lắp 3D Hệ tuần hoàn máu!');
@@ -2044,8 +2044,10 @@ function exitAssemblyLab() {
 
 function setLabMode(mode) {
   labState.mode = mode;
-  document.getElementById('btn-lab-mode-explode').classList.toggle('active', mode === 'explode');
-  document.getElementById('btn-lab-mode-puzzle').classList.toggle('active', mode === 'puzzle');
+  const btnExplode = document.getElementById('btn-lab-mode-explode');
+  if (btnExplode) btnExplode.classList.toggle('active', mode === 'explode');
+  const btnPuzzle = document.getElementById('btn-lab-mode-puzzle');
+  if (btnPuzzle) btnPuzzle.classList.toggle('active', mode === 'puzzle');
 
   const explodeCtrl = document.getElementById('lab-explode-control');
   const clueCard = document.getElementById('lab-clue-card');
@@ -2054,9 +2056,9 @@ function setLabMode(mode) {
   const shelfGroup = scene.getObjectByName('assemblyShelfGroup');
 
   if (mode === 'explode') {
-    explodeCtrl.style.display = 'flex';
-    clueCard.classList.add('hidden');
-    partsTray.classList.add('hidden');
+    if (explodeCtrl) explodeCtrl.style.display = 'flex';
+    if (clueCard) clueCard.classList.add('hidden');
+    if (partsTray) partsTray.classList.add('hidden');
     if (zoneIndicators) zoneIndicators.classList.add('hidden');
     if (shelfGroup) shelfGroup.visible = false;
 
@@ -2070,9 +2072,9 @@ function setLabMode(mode) {
     setExplodeFactor(labState.explodeFactor);
   } else {
     // Chế độ Thử thách Lắp ráp 3D
-    explodeCtrl.style.display = 'none';
-    clueCard.classList.remove('hidden');
-    partsTray.classList.remove('hidden');
+    if (explodeCtrl) explodeCtrl.style.display = 'none';
+    if (clueCard) clueCard.classList.remove('hidden');
+    if (partsTray) partsTray.classList.remove('hidden');
     if (zoneIndicators) zoneIndicators.classList.remove('hidden');
 
     startPuzzleChallenge();
@@ -2519,12 +2521,19 @@ if (quickLabBtn) quickLabBtn.addEventListener('click', enterAssemblyLab);
 
 document.getElementById('btn-lab-exit').addEventListener('click', exitAssemblyLab);
 
-document.getElementById('btn-lab-mode-explode').addEventListener('click', () => {
-  setLabMode('explode');
-});
-document.getElementById('btn-lab-mode-puzzle').addEventListener('click', () => {
-  setLabMode('puzzle');
-});
+const btnLabModeExplode = document.getElementById('btn-lab-mode-explode');
+if (btnLabModeExplode) {
+  btnLabModeExplode.addEventListener('click', () => {
+    setLabMode('explode');
+  });
+}
+
+const btnLabModePuzzle = document.getElementById('btn-lab-mode-puzzle');
+if (btnLabModePuzzle) {
+  btnLabModePuzzle.addEventListener('click', () => {
+    setLabMode('puzzle');
+  });
+}
 
 const explodeSlider = document.getElementById('explode-slider');
 if (explodeSlider) {

@@ -195,12 +195,9 @@
         </div>
 
         <div class="lab-mode-pills">
-          <button class="lab-pill-btn active" id="btn-lab-mode-explode">
-            <i class="fa-solid fa-arrows-split-up-and-left"></i> Tháo rã trực quan (Slider)
-          </button>
-          <button class="lab-pill-btn" id="btn-lab-mode-puzzle">
+          <div class="lab-pill-btn active" id="btn-lab-mode-puzzle" style="cursor: default;">
             <i class="fa-solid fa-cubes-stacked"></i> Thử thách Lắp ráp 3D
-          </button>
+          </div>
         </div>
 
         <div class="lab-actions">
@@ -234,18 +231,6 @@
         </div>
       </div>
 
-      <!-- Explode Slider Bar (khi ở chế độ Tháo rã trực quan) -->
-      <div class="lab-explode-control" id="lab-explode-control">
-        <div class="explode-label">
-          <i class="fa-solid fa-sliders"></i> Khoảng cách tháo rã: <strong id="explode-val-txt">0%</strong>
-        </div>
-        <input type="range" id="explode-slider" min="0" max="100" value="0" step="1">
-        <div class="explode-markers">
-          <span>0% (Hoàn chỉnh)</span>
-          <span>50% (Tách rời)</span>
-          <span>100% (Tháo rã tối đa)</span>
-        </div>
-      </div>
 
       <!-- Clue & Guide Box (khi ở chế độ Thử thách Lắp ráp) -->
       <div class="lab-clue-card hidden" id="lab-clue-card">
