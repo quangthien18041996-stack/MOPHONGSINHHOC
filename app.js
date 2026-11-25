@@ -2334,14 +2334,10 @@ function selectTrayPart(partId) {
   if (clueTitle) clueTitle.textContent = `Lắp: ${part.name}`;
   if (clueDesc) clueDesc.textContent = part.clue;
 
-  // Nhấp nháy nổi bật vị trí bóng mờ mục tiêu trong 3D
+  // Giữ toàn bộ khung bóng mờ ở màu tự nhiên đồng nhất, không phát sáng màu xanh chỉ điểm
   Object.values(labState.parts).forEach(p => {
     if (p.ghost && !p.assembled) {
-      if (p.id === partId) {
-        setGhostHighlight(p.ghost, 0x00e676, 0.85);
-      } else {
-        setGhostHighlight(p.ghost, p.color, 0.25);
-      }
+      setGhostHighlight(p.ghost, p.color, 0.25);
     }
   });
 
