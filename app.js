@@ -2360,14 +2360,14 @@ function handleDragEnd(clientX, clientY) {
   const worldPos = get3DWorldPos(clientX, clientY);
 
   if (insideCanvas && worldPos) {
-    // 1. Nếu kéo thả về khu vực kệ linh kiện bên phải (X > 5.2): tháo bộ phận trả về kệ chờ
-    if (worldPos.x > 5.2) {
+    // 1. Nếu kéo thả về khu vực kệ linh kiện bên phải (X > 2.8) hoặc thả xuống khay phía dưới: tháo bộ phận trả về kệ chờ ban đầu
+    if (worldPos.x > 2.8 || clientY > rect.bottom - 100) {
       uninstallPartToShelf(part.id);
       return;
     }
 
-    // 2. Nếu thả sang khu vực mô hình đích bên trái (X < 4.5): tìm vị trí cắm (slot) tương thích gần nhất
-    if (worldPos.x < 4.5 && clientY < rect.bottom - 100) {
+    // 2. Nếu thả sang khu vực mô hình đích bên trái (X <= 2.8): tìm vị trí cắm (slot) tương thích gần nhất
+    if (worldPos.x <= 2.8 && clientY <= rect.bottom - 100) {
       const bestSlot = findBestMatchingSlot(part, worldPos);
       if (bestSlot) {
         snapPartIntoSlot(part.id, bestSlot.id);
@@ -2377,11 +2377,19 @@ function handleDragEnd(clientX, clientY) {
   }
 
   // 3. Nếu thả ra ở khoảng trống không hợp lệ:
+  // Nếu là bộ phận đang lắp sai vị trí mà bị kéo ra khỏi socket: tự động trả về kệ ban đầu
+  if (part.assembled && !part.isCorrect) {
+    uninstallPartToShelf(part.id);
+    return;
+  }
+
   if (part.assembled && part.currentSlot) {
     const tf = getPartSlotTransform(part.id, part.currentSlot);
+    part.object.scale.copy(tf.scale);
     animatePartTo(part.object, tf.pos, 280);
   } else {
     // Trả về vị trí kệ linh kiện bên phải
+    part.object.scale.set(1, 1, 1);
     animatePartTo(part.object, part.puzzleSidePos, 280);
     setGhostHighlight(part.ghost, part.color, 0.25);
   }
@@ -2406,6 +2414,7 @@ window.addEventListener('drop', (e) => {
 function setupCardDragDrop(card, part) {
   card.addEventListener('dragstart', (e) => {
     activeDragPart = part;
+    part.object.scale.set(1, 1, 1);
     controls.enabled = false;
     card.classList.add('dragging');
     selectTrayPart(part.id);
@@ -2448,6 +2457,7 @@ function setupCardPointerDrag(card, part) {
       didMove = true;
       card._wasDragged = true;
       activeDragPart = part;
+      part.object.scale.set(1, 1, 1);
       controls.enabled = false;
       card.classList.add('dragging');
       try { card.setPointerCapture(e.pointerId); } catch(err) {}
@@ -2535,7 +2545,26 @@ function selectTrayPart(partId) {
   if (clueBadge) clueBadge.textContent = part.badge.toUpperCase();
   if (clueTitle) clueTitle.textContent = `Lắp: ${part.name}`;
   if (part.assembled && !part.isCorrect) {
-    if (clueDesc) clueDesc.innerHTML = `<span style="color: #fbbf24; font-weight: 700;">⚠️ Bộ phận này đang lắp sai vị trí (dòng máu chưa thể lưu thông)!</span> Em hãy quan sát hình dáng và kéo sang vị trí đúng hoặc kéo về kệ chờ để đổi lại.`;
+    if (clueDesc) {
+      clueDesc.innerHTML = `
+        <span style="color: #fbbf24; font-weight: 700;"><i class="fa-solid fa-triangle-exclamation"></i> Bộ phận này đang lắp sai vị trí (dòng máu chưa thể lưu thông)!</span><br>
+        <span style="font-size: 12.5px; color: #cbd5e1; display: inline-block; margin-top: 4px;">Em có thể kéo vật thể 3D ngược về kệ bên phải/khay dưới, hoặc bấm nút tháo:</span>
+        <div style="margin-top: 8px;">
+          <button id="btn-return-misplaced" class="btn-return-misplaced" type="button">
+            <i class="fa-solid fa-rotate-left"></i> Tháo về kệ ban đầu
+          </button>
+        </div>
+      `;
+      const btnReturn = document.getElementById('btn-return-misplaced');
+      if (btnReturn) {
+        btnReturn.onclick = (e) => {
+          e.stopPropagation();
+          uninstallPartToShelf(part.id);
+        };
+      }
+    }
+  } else if (part.assembled && part.isCorrect) {
+    if (clueDesc) clueDesc.innerHTML = `<span style="color: #10b981; font-weight: 700;">✓ Đã lắp đúng vị trí giải phẫu!</span> ${part.clue}`;
   } else {
     if (clueDesc) clueDesc.textContent = part.clue;
   }
@@ -2595,6 +2624,7 @@ function snapPartIntoSlot(partId, slotId) {
   playSnapSound();
   if (!part.isCorrect) {
     showLabAlert(`⚠️ <strong>${part.name}</strong> đã lắp nhưng <strong>sai vị trí giải phẫu</strong>!<br>Dòng máu không thể chảy qua đây. Em hãy kéo đổi lại đúng vị trí.`);
+    selectTrayPart(part.id);
   }
 
   // Cập nhật tiến độ
@@ -2629,6 +2659,8 @@ function uninstallPartToShelf(partId) {
 
   updateGhostVisibility();
   updateLabProgress();
+  selectTrayPart(part.id);
+  showLabAlert(`↩ Đã tháo <strong>${part.name}</strong> về lại kệ ban đầu.`);
 }
 
 function snapPartIntoPlace(partId) {
@@ -2728,43 +2760,42 @@ renderer.domElement.addEventListener('pointerdown', (e) => {
     while (hit && !hit.userData.id && hit.parent) hit = hit.parent;
     if (hit && hit.userData.id && labState.parts[hit.userData.id]) {
       const part = labState.parts[hit.userData.id];
-      if (!part.assembled) {
-        selectTrayPart(part.id);
-        const startX = e.clientX;
-        const startY = e.clientY;
-        let isDragging = false;
+      selectTrayPart(part.id);
+      const startX = e.clientX;
+      const startY = e.clientY;
+      let isDragging = false;
 
-        const onSceneMove = (ev) => {
-          const dx = ev.clientX - startX;
-          const dy = ev.clientY - startY;
-          if (!isDragging && Math.hypot(dx, dy) > 6) {
-            isDragging = true;
-            activeDragPart = part;
-            controls.enabled = false;
-            showDropOverlay(true);
-            try { renderer.domElement.setPointerCapture(e.pointerId); } catch(err) {}
-          }
-          if (isDragging && activeDragPart === part) {
-            handleDragMove(ev.clientX, ev.clientY);
-          }
-        };
+      const onSceneMove = (ev) => {
+        const dx = ev.clientX - startX;
+        const dy = ev.clientY - startY;
+        if (!isDragging && Math.hypot(dx, dy) > 6) {
+          isDragging = true;
+          activeDragPart = part;
+          part.object.scale.set(1, 1, 1);
+          controls.enabled = false;
+          showDropOverlay(true);
+          try { renderer.domElement.setPointerCapture(e.pointerId); } catch(err) {}
+        }
+        if (isDragging && activeDragPart === part) {
+          handleDragMove(ev.clientX, ev.clientY);
+        }
+      };
 
-        const onSceneUp = (ev) => {
-          renderer.domElement.removeEventListener('pointermove', onSceneMove);
-          renderer.domElement.removeEventListener('pointerup', onSceneUp);
-          renderer.domElement.removeEventListener('pointercancel', onSceneUp);
-          if (isDragging) {
-            _justDragged3D = true;
-            setTimeout(() => { _justDragged3D = false; }, 200);
-            try { renderer.domElement.releasePointerCapture(ev.pointerId); } catch(err) {}
-            handleDragEnd(ev.clientX, ev.clientY);
-          }
-        };
+      const onSceneUp = (ev) => {
+        renderer.domElement.removeEventListener('pointermove', onSceneMove);
+        renderer.domElement.removeEventListener('pointerup', onSceneUp);
+        renderer.domElement.removeEventListener('pointercancel', onSceneUp);
+        if (isDragging) {
+          _justDragged3D = true;
+          setTimeout(() => { _justDragged3D = false; }, 200);
+          try { renderer.domElement.releasePointerCapture(ev.pointerId); } catch(err) {}
+          handleDragEnd(ev.clientX, ev.clientY);
+        }
+      };
 
-        renderer.domElement.addEventListener('pointermove', onSceneMove);
-        renderer.domElement.addEventListener('pointerup', onSceneUp);
-        renderer.domElement.addEventListener('pointercancel', onSceneUp);
-      }
+      renderer.domElement.addEventListener('pointermove', onSceneMove);
+      renderer.domElement.addEventListener('pointerup', onSceneUp);
+      renderer.domElement.addEventListener('pointercancel', onSceneUp);
     }
   }
 });
