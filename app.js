@@ -943,12 +943,18 @@ const mouse = new THREE.Vector2();
 
 window.addEventListener('click', (e) => {
   // Chỉ bắt sự kiện click khi không bấm vào các nút điều khiển UI
-  if (e.target.closest('.top-nav, .floating-controls, .info-drawer, .legend-card, .quick-nav, .modal-card, .label-3d')) {
+  if (e.target.closest('.top-nav, .floating-controls, .info-drawer, .legend-card, .quick-nav, .modal-card, .label-3d, .assembly-lab-hud')) {
     return;
   }
 
   mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+  // Nếu đang trong Phòng Tháo Lắp 3D
+  if (labState && labState.active) {
+    handleLab3DClick();
+    return;
+  }
 
   raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects(interactiveObjects, true);
@@ -1656,6 +1662,554 @@ document.getElementById('drawer-close').addEventListener('click', () => {
   infoDrawer.classList.remove('open');
   document.querySelectorAll('.label-3d').forEach(el => el.classList.remove('active'));
 });
+
+// --- 17. PHÒNG THỰC HÀNH THÁO LẮP 3D (ASSEMBLY LAB) ---
+const labState = {
+  active: false,
+  mode: 'explode', // 'explode' or 'puzzle'
+  explodeFactor: 0.0,
+  selectedPartId: 'heart',
+  assembledCount: 7,
+  parts: {},
+  ghostObjects: []
+};
+
+// Khởi tạo các thông số & bóng mờ vị trí chuẩn của 7 bộ phận
+function initAssemblyLab() {
+  labState.parts = {
+    'heart': {
+      id: 'heart',
+      name: 'Tim (4 ngăn)',
+      object: heartGroup,
+      originPos: new THREE.Vector3(0, 0, 0),
+      explodeOffset: new THREE.Vector3(0, 0, 0.4),
+      color: 0xffb300,
+      icon: 'fa-heart',
+      badge: 'Trung tâm tuần hoàn',
+      clue: 'Khối cơ rỗng gồm 4 ngăn nằm ở trung tâm lồng ngực, hoạt động như chiếc máy bơm hút và đẩy máu đi khắp 2 vòng tuần hoàn.',
+      assembled: true,
+      ghost: null
+    },
+    'artery-pulmonary': {
+      id: 'artery-pulmonary',
+      name: 'Động mạch phổi',
+      object: vPulmonaryArtery,
+      originPos: new THREE.Vector3(0, 0, 0),
+      explodeOffset: new THREE.Vector3(-3.2, 1.8, 1.2),
+      color: 0x0088ff,
+      icon: 'fa-arrow-up',
+      badge: 'Vòng tuần hoàn nhỏ',
+      clue: 'Mạch máu xuất phát từ Tâm thất phải, dẫn máu đỏ thẫm (giàu CO₂) đi lên lưới mao mạch phổi để trao đổi khí.',
+      assembled: true,
+      ghost: null
+    },
+    'capillaries-lungs': {
+      id: 'capillaries-lungs',
+      name: 'Mao mạch phổi',
+      object: lungCapillaries,
+      originPos: new THREE.Vector3(0, 5.4, 0),
+      explodeOffset: new THREE.Vector3(0, 4.0, 0.8),
+      color: 0x9c27b0,
+      icon: 'fa-lungs',
+      badge: 'Vòng tuần hoàn nhỏ',
+      clue: 'Lưới mao mạch nằm ở đỉnh phía trên bao quanh phế nang, nơi máu thải khí CO₂ và nhận O₂ biến thành máu đỏ tươi.',
+      assembled: true,
+      ghost: null
+    },
+    'vein-pulmonary': {
+      id: 'vein-pulmonary',
+      name: 'Tĩnh mạch phổi',
+      object: vPulmonaryVein,
+      originPos: new THREE.Vector3(0, 0, 0),
+      explodeOffset: new THREE.Vector3(3.2, 1.8, 1.2),
+      color: 0xff334b,
+      icon: 'fa-arrow-down',
+      badge: 'Vòng tuần hoàn nhỏ',
+      clue: 'Mạch máu dẫn máu đỏ tươi (giàu O₂) vừa được nạp oxy từ mao mạch phổi đi xuống đổ về Tâm nhĩ trái của tim.',
+      assembled: true,
+      ghost: null
+    },
+    'artery-systemic': {
+      id: 'artery-systemic',
+      name: 'Động mạch (chủ)',
+      object: vSystemicArtery,
+      originPos: new THREE.Vector3(0, 0, 0),
+      explodeOffset: new THREE.Vector3(3.5, -2.2, 1.2),
+      color: 0xff334b,
+      icon: 'fa-arrow-down',
+      badge: 'Vòng tuần hoàn lớn',
+      clue: 'Động mạch lớn nhất cơ thể xuất phát từ Tâm thất trái, dẫn dòng máu đỏ tươi giàu O₂ đi xuống nuôi dưỡng các cơ quan.',
+      assembled: true,
+      ghost: null
+    },
+    'capillaries-body': {
+      id: 'capillaries-body',
+      name: 'Mao mạch ở các cơ quan',
+      object: bodyCapillaries,
+      originPos: new THREE.Vector3(0, -5.4, 0),
+      explodeOffset: new THREE.Vector3(0, -4.0, 0.8),
+      color: 0x9c27b0,
+      icon: 'fa-network-wired',
+      badge: 'Vòng tuần hoàn lớn',
+      clue: 'Mạng lưới mao mạch phía dưới nuôi tế bào cơ quan, tại đây máu nhường O₂ & dưỡng chất, nhận lại CO₂ trở thành máu đỏ thẫm.',
+      assembled: true,
+      ghost: null
+    },
+    'vein-systemic': {
+      id: 'vein-systemic',
+      name: 'Tĩnh mạch',
+      object: vSystemicVein,
+      originPos: new THREE.Vector3(0, 0, 0),
+      explodeOffset: new THREE.Vector3(-3.5, -2.2, 1.2),
+      color: 0x0088ff,
+      icon: 'fa-arrow-up',
+      badge: 'Vòng tuần hoàn lớn',
+      clue: 'Hệ thống tĩnh mạch thu gom máu nghèo O₂ (màu xanh/đỏ thẫm) từ các cơ quan đi lên để đổ về Tâm nhĩ phải.',
+      assembled: true,
+      ghost: null
+    }
+  };
+
+  // Tạo nhóm bóng mờ hiển thị vị trí lắp ráp chuẩn trong 3D
+  const ghostGroup = new THREE.Group();
+  ghostGroup.name = 'assemblyGhostGroup';
+  scene.add(ghostGroup);
+
+  Object.values(labState.parts).forEach(part => {
+    let gMesh = null;
+    const gMat = new THREE.MeshBasicMaterial({
+      color: part.color,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.35
+    });
+
+    if (part.object.isMesh) {
+      gMesh = new THREE.Mesh(part.object.geometry.clone(), gMat);
+      gMesh.position.copy(part.originPos);
+      gMesh.rotation.copy(part.object.rotation);
+      gMesh.scale.copy(part.object.scale);
+      gMesh.userData = { isGhost: true, partId: part.id };
+    } else {
+      gMesh = new THREE.Group();
+      part.object.traverse(child => {
+        if (child.isMesh && child.geometry) {
+          const cm = new THREE.Mesh(child.geometry.clone(), gMat);
+          cm.position.copy(child.position);
+          cm.rotation.copy(child.rotation);
+          cm.scale.copy(child.scale);
+          cm.userData = { isGhost: true, partId: part.id };
+          gMesh.add(cm);
+        }
+      });
+      gMesh.position.copy(part.originPos);
+      gMesh.userData = { isGhost: true, partId: part.id };
+    }
+
+    gMesh.visible = false;
+    ghostGroup.add(gMesh);
+    part.ghost = gMesh;
+    labState.ghostObjects.push(gMesh);
+  });
+}
+
+function setGhostHighlight(ghostObj, hexColor, opacity) {
+  if (!ghostObj) return;
+  ghostObj.traverse(child => {
+    if (child.isMesh && child.material) {
+      if (child.material.color) child.material.color.setHex(hexColor);
+      child.material.opacity = opacity;
+      child.material.transparent = true;
+    }
+  });
+}
+
+function playSnapSound() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(523.25, now);
+    osc.frequency.exponentialRampToValueAtTime(1046.5, now + 0.15);
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.22);
+  } catch(e) {}
+}
+
+function playVictorySound() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const now = audioCtx.currentTime;
+    const notes = [523.25, 659.25, 783.99, 1046.5];
+    notes.forEach((freq, idx) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+      gain.gain.setValueAtTime(0.3, now + idx * 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.35);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now + idx * 0.1);
+      osc.stop(now + idx * 0.1 + 0.35);
+    });
+  } catch(e) {}
+}
+
+function enterAssemblyLab() {
+  labState.active = true;
+  document.body.classList.add('in-lab-mode');
+  stopSpeaking();
+
+  if (Object.keys(labState.parts).length === 0) {
+    initAssemblyLab();
+  }
+
+  // Ẩn các thanh HUD thông thường
+  document.getElementById('assembly-lab-hud').classList.remove('hidden');
+  document.querySelector('.floating-controls').style.display = 'none';
+  document.querySelector('.quick-nav').style.display = 'none';
+  document.querySelector('.legend-card').style.display = 'none';
+  document.getElementById('labels-overlay').style.display = 'none';
+  infoDrawer.classList.remove('open');
+
+  // Đưa camera về góc nhìn toàn cảnh rộng rãi
+  animateCameraTo(new THREE.Vector3(0, 0, 19), new THREE.Vector3(0, 0, 0), 600);
+
+  // Mặc định ban đầu vào chế độ Tháo rã Slider
+  setLabMode('explode');
+
+  if (state.voiceEnabled) {
+    speakText('Chào mừng các em đến với Phòng thực hành tháo lắp 3D Hệ tuần hoàn máu!');
+  }
+}
+
+function exitAssemblyLab() {
+  labState.active = false;
+  document.body.classList.remove('in-lab-mode');
+  stopSpeaking();
+
+  // Ráp lại toàn bộ về vị trí chuẩn
+  setExplodeFactor(0.0);
+  Object.values(labState.parts).forEach(part => {
+    part.assembled = true;
+    part.object.position.copy(part.originPos);
+    if (part.ghost) part.ghost.visible = false;
+  });
+
+  // Hiện lại giao diện thông thường
+  document.getElementById('assembly-lab-hud').classList.add('hidden');
+  document.querySelector('.floating-controls').style.display = 'flex';
+  document.querySelector('.quick-nav').style.display = 'flex';
+  document.querySelector('.legend-card').style.display = 'block';
+  document.getElementById('labels-overlay').style.display = 'block';
+
+  // Khôi phục camera
+  setViewMode('all');
+}
+
+function setLabMode(mode) {
+  labState.mode = mode;
+  document.getElementById('btn-lab-mode-explode').classList.toggle('active', mode === 'explode');
+  document.getElementById('btn-lab-mode-puzzle').classList.toggle('active', mode === 'puzzle');
+
+  const explodeCtrl = document.getElementById('lab-explode-control');
+  const clueCard = document.getElementById('lab-clue-card');
+  const partsTray = document.getElementById('lab-parts-tray');
+
+  if (mode === 'explode') {
+    explodeCtrl.style.display = 'flex';
+    clueCard.classList.add('hidden');
+    partsTray.classList.add('hidden');
+
+    // Ẩn các bóng mờ
+    Object.values(labState.parts).forEach(part => {
+      if (part.ghost) part.ghost.visible = false;
+    });
+
+    setExplodeFactor(labState.explodeFactor);
+  } else {
+    // Chế độ Thử thách Lắp ráp 3D
+    explodeCtrl.style.display = 'none';
+    clueCard.classList.remove('hidden');
+    partsTray.classList.remove('hidden');
+
+    startPuzzleChallenge();
+  }
+}
+
+function setExplodeFactor(factor) {
+  labState.explodeFactor = factor;
+  Object.values(labState.parts).forEach(part => {
+    const targetPos = part.originPos.clone().add(part.explodeOffset.clone().multiplyScalar(factor));
+    part.object.position.copy(targetPos);
+  });
+
+  const slider = document.getElementById('explode-slider');
+  const txt = document.getElementById('explode-val-txt');
+  if (slider) slider.value = Math.round(factor * 100);
+  if (txt) txt.textContent = `${Math.round(factor * 100)}%`;
+
+  // Cập nhật tiến độ
+  const progText = document.getElementById('lab-progress-text');
+  if (progText) {
+    if (factor === 0) {
+      progText.textContent = 'Tiến độ: Hoàn chỉnh 7 / 7 bộ phận';
+    } else {
+      progText.textContent = `Tháo rã: ${Math.round(factor * 100)}% khoảng cách`;
+    }
+  }
+}
+
+function startPuzzleChallenge() {
+  labState.assembledCount = 0;
+  Object.values(labState.parts).forEach(part => {
+    part.assembled = false;
+    part.object.position.copy(part.originPos.clone().add(part.explodeOffset));
+    if (part.ghost) part.ghost.visible = true;
+  });
+
+  renderTrayItems();
+  updateLabProgress();
+  selectTrayPart('heart');
+}
+
+function renderTrayItems() {
+  const grid = document.getElementById('tray-items-grid');
+  if (!grid) return;
+
+  grid.innerHTML = '';
+  Object.values(labState.parts).forEach(part => {
+    const card = document.createElement('div');
+    card.className = `tray-item-card ${part.assembled ? 'placed' : ''} ${labState.selectedPartId === part.id ? 'selected' : ''}`;
+    card.dataset.id = part.id;
+    card.innerHTML = `
+      <div class="tray-item-icon" style="background: ${part.color}">
+        <i class="fa-solid ${part.icon}"></i>
+      </div>
+      <span class="tray-item-name">${part.name}</span>
+    `;
+
+    card.addEventListener('click', () => {
+      if (!part.assembled) {
+        if (labState.selectedPartId === part.id) {
+          // Bấm lần thứ hai vào thẻ đang chọn sẽ tự động ráp vào mô hình
+          snapPartIntoPlace(part.id);
+        } else {
+          selectTrayPart(part.id);
+        }
+      }
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+function selectTrayPart(partId) {
+  const part = labState.parts[partId];
+  if (!part) return;
+
+  labState.selectedPartId = partId;
+
+  // Cập nhật giao diện khay
+  document.querySelectorAll('.tray-item-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.id === partId);
+  });
+
+  // Cập nhật hộp gợi ý
+  const clueBadge = document.getElementById('clue-badge');
+  const clueTitle = document.getElementById('clue-title');
+  const clueDesc = document.getElementById('clue-desc');
+
+  if (clueBadge) clueBadge.textContent = part.badge.toUpperCase();
+  if (clueTitle) clueTitle.textContent = `Lắp: ${part.name}`;
+  if (clueDesc) clueDesc.textContent = part.clue;
+
+  // Nhấp nháy nổi bật vị trí bóng mờ mục tiêu trong 3D
+  Object.values(labState.parts).forEach(p => {
+    if (p.ghost && !p.assembled) {
+      if (p.id === partId) {
+        setGhostHighlight(p.ghost, 0x00e676, 0.85);
+      } else {
+        setGhostHighlight(p.ghost, p.color, 0.25);
+      }
+    }
+  });
+
+  if (state.voiceEnabled) {
+    speakText(`${part.name}. ${part.clue}`);
+  }
+}
+
+function snapPartIntoPlace(partId) {
+  const part = labState.parts[partId];
+  if (!part || part.assembled) return;
+
+  part.assembled = true;
+  labState.assembledCount++;
+
+  // Animate smoothly về vị trí origin
+  animatePartTo(part.object, part.originPos, 450);
+  if (part.ghost) part.ghost.visible = false;
+
+  playSnapSound();
+
+  renderTrayItems();
+  updateLabProgress();
+
+  // Chọn bộ phận tiếp theo chưa lắp
+  const nextUnplaced = Object.values(labState.parts).find(p => !p.assembled);
+  if (nextUnplaced) {
+    setTimeout(() => {
+      selectTrayPart(nextUnplaced.id);
+    }, 500);
+  } else {
+    // Hoàn thành tất cả 7/7 bộ phận!
+    setTimeout(onAssemblyComplete, 600);
+  }
+}
+
+function animatePartTo(object, targetPos, duration = 400) {
+  const startPos = object.position.clone();
+  const startTime = performance.now();
+
+  function anim(time) {
+    const elapsed = time - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3);
+
+    object.position.lerpVectors(startPos, targetPos, ease);
+    if (progress < 1) {
+      requestAnimationFrame(anim);
+    }
+  }
+  requestAnimationFrame(anim);
+}
+
+function updateLabProgress() {
+  const progText = document.getElementById('lab-progress-text');
+  if (progText) {
+    progText.textContent = `Tiến độ: Đã lắp ${labState.assembledCount} / 7 bộ phận`;
+  }
+}
+
+function onAssemblyComplete() {
+  playVictorySound();
+  const vicModal = document.getElementById('assembly-victory-modal');
+  if (vicModal) vicModal.classList.remove('hidden');
+
+  if (state.voiceEnabled) {
+    speakText('Chúc mừng em đã xuất sắc hoàn thành việc lắp ráp toàn bộ 7 bộ phận của Hệ Tuần Hoàn Máu Người!');
+  }
+}
+
+function handleLab3DClick() {
+  const labRay = new THREE.Raycaster();
+  labRay.setFromCamera(mouse, camera);
+
+  // Kiểm tra click vào bóng mờ vị trí mục tiêu
+  const ghostHits = labRay.intersectObjects(scene.getObjectByName('assemblyGhostGroup')?.children || [], true);
+  if (ghostHits.length > 0) {
+    let hit = ghostHits[0].object;
+    while (hit && !hit.userData.partId && hit.parent) hit = hit.parent;
+    if (hit && hit.userData.partId) {
+      const clickedPartId = hit.userData.partId;
+      if (labState.selectedPartId === clickedPartId) {
+        snapPartIntoPlace(clickedPartId);
+      } else {
+        selectTrayPart(clickedPartId);
+      }
+      return;
+    }
+  }
+
+  // Kiểm tra click vào chính bộ phận đang nằm ở vị trí tháo rời
+  const partHits = labRay.intersectObjects(interactiveObjects, true);
+  if (partHits.length > 0) {
+    let hit = partHits[0].object;
+    while (hit && !hit.userData.id && hit.parent) hit = hit.parent;
+    if (hit && hit.userData.id) {
+      const pId = hit.userData.id;
+      if (labState.parts[pId]) {
+        if (!labState.parts[pId].assembled) {
+          snapPartIntoPlace(pId);
+        } else {
+          selectTrayPart(pId);
+        }
+      }
+    }
+  }
+}
+
+// Gắn sự kiện các nút điều khiển trong Phòng Tháo Lắp
+document.getElementById('btn-assembly-lab').addEventListener('click', enterAssemblyLab);
+const quickLabBtn = document.getElementById('quick-assembly-lab');
+if (quickLabBtn) quickLabBtn.addEventListener('click', enterAssemblyLab);
+
+document.getElementById('btn-lab-exit').addEventListener('click', exitAssemblyLab);
+
+document.getElementById('btn-lab-mode-explode').addEventListener('click', () => {
+  setLabMode('explode');
+});
+document.getElementById('btn-lab-mode-puzzle').addEventListener('click', () => {
+  setLabMode('puzzle');
+});
+
+const explodeSlider = document.getElementById('explode-slider');
+if (explodeSlider) {
+  explodeSlider.addEventListener('input', (e) => {
+    setExplodeFactor(parseFloat(e.target.value) / 100);
+  });
+}
+
+const btnSnapActive = document.getElementById('btn-snap-active');
+if (btnSnapActive) {
+  btnSnapActive.addEventListener('click', () => {
+    if (labState.selectedPartId) {
+      snapPartIntoPlace(labState.selectedPartId);
+    }
+  });
+}
+
+document.getElementById('btn-lab-auto-assemble').addEventListener('click', () => {
+  Object.values(labState.parts).forEach(part => {
+    snapPartIntoPlace(part.id);
+  });
+  setExplodeFactor(0.0);
+});
+
+document.getElementById('btn-lab-disassemble-all').addEventListener('click', () => {
+  if (labState.mode === 'explode') {
+    setExplodeFactor(1.0);
+  } else {
+    startPuzzleChallenge();
+  }
+});
+
+// Victory Modal Events
+const btnVictoryView = document.getElementById('btn-victory-view');
+if (btnVictoryView) {
+  btnVictoryView.addEventListener('click', () => {
+    document.getElementById('assembly-victory-modal').classList.add('hidden');
+    exitAssemblyLab();
+  });
+}
+
+const btnVictoryReplay = document.getElementById('btn-victory-replay');
+if (btnVictoryReplay) {
+  btnVictoryReplay.addEventListener('click', () => {
+    document.getElementById('assembly-victory-modal').classList.add('hidden');
+    startPuzzleChallenge();
+  });
+}
 
 // --- 18. VÒNG LẶP CHÍNH (RENDER & ANIMATION LOOP) ---
 const clock = new THREE.Clock();

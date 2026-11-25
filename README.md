@@ -38,7 +38,13 @@
      - **Cận cảnh Tiểu cầu 3D:** Mảnh tế bào chất hình sao với các gai chân giả tỏa ra không gian 3 chiều.
      - Tab **Đối chiếu sơ đồ SGK** giúp so sánh trực quan với hình vẽ trong sách giáo khoa.
 
-6. **Các chế độ xem chuyên sâu (View Modes)**:
+6. **Phòng Thực Hành Tự Tháo Lắp 3D (3D Assembly & Disassembly Lab)** 🧩:
+   - Nhấp vào nút **"Phòng Tháo Lắp 3D"** trên thanh tiêu đề để bước vào không gian thực hành tương tác:
+     - **Chế độ Bóc tách 3D (Exploded View):** Kéo thanh trượt từ 0% đến 100% để tách rời toàn bộ 7 cơ quan chính (Tim 4 ngăn, Động mạch phổi, Mao mạch phổi, Tĩnh mạch phổi, Động mạch chủ, Tĩnh mạch, Mao mạch cơ quan) ra xa nhau theo các trục không gian, giúp học sinh nhìn thấu điểm nối và cấu trúc từng bộ phận.
+     - **Thử thách Lắp ráp 3D (3D Interactive Puzzle):** Toàn bộ mô hình sẽ được phân rã về khay linh kiện ở đáy màn hình. Học sinh quan sát hình bóng khung lưới (Ghost wireframe) mục tiêu, chọn từng bộ phận từ khay (hoặc nhấp trực tiếp vào bóng mục tiêu 3D) để gắn bộ phận vào đúng vị trí.
+     - Có gợi ý sinh học thông minh, âm thanh "Snap" vui tai khi lắp đúng, và bảng chúc mừng hoàn thành khi ghép đủ 7 bộ phận!
+
+7. **Các chế độ xem chuyên sâu (View Modes)**:
    - **Toàn bộ:** Quan sát toàn cảnh cả 2 vòng tuần hoàn.
    - **Vòng tuần hoàn nhỏ:** Làm nổi bật đường đi của máu lên phổi và trở về tim.
    - **Vòng tuần hoàn lớn:** Làm nổi bật đường đi của máu nuôi dưỡng toàn bộ cơ quan cơ thể.

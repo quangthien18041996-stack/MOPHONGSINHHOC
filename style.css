@@ -64,12 +64,18 @@ body {
   backdrop-filter: blur(10px);
   z-index: 50;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: nowrap;
 }
 
 .logo-area {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
+}
+
+.title-wrap {
+  white-space: nowrap;
 }
 
 .pulse-icon {
@@ -1292,6 +1298,494 @@ body:has(.info-drawer.open) .quick-nav {
   box-shadow: 0 0 12px rgba(255, 179, 0, 0.4) !important;
 }
 
+/* ================= PHÒNG THÁO LẮP 3D (ASSEMBLY LAB) ================= */
+.btn-lab {
+  background: linear-gradient(135deg, #059669, #10b981) !important;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4) !important;
+}
+
+.btn-lab:hover {
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6) !important;
+}
+
+.lab-pill {
+  background: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+  color: #34d399 !important;
+  font-weight: 600 !important;
+}
+
+.lab-pill:hover {
+  background: rgba(16, 185, 129, 0.3) !important;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.4) !important;
+}
+
+.assembly-lab-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 35;
+  transition: opacity 0.3s ease;
+}
+
+.assembly-lab-hud.hidden {
+  display: none;
+}
+
+body.in-lab-mode .mode-selector {
+  display: none !important;
+}
+body.in-lab-mode .quick-nav {
+  display: none !important;
+}
+body.in-lab-mode .legend-card {
+  display: none !important;
+}
+body.in-lab-mode #labels-overlay {
+  display: none !important;
+}
+body.in-lab-mode .floating-controls {
+  display: none !important;
+}
+
+/* Lab Top Bar */
+.lab-top-bar {
+  position: absolute;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 94%;
+  max-width: 960px;
+  background: rgba(15, 23, 42, 0.94);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 8px 16px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 20px rgba(16, 185, 129, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: auto;
+  z-index: 40;
+}
+
+.lab-title-area {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lab-icon-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+}
+
+.lab-title-text h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.2px;
+}
+
+.lab-title-text span {
+  font-size: 11px;
+  color: #34d399;
+  font-weight: 600;
+}
+
+.lab-mode-pills {
+  display: flex;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 3px;
+  gap: 4px;
+}
+
+.lab-pill-btn {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.lab-pill-btn:hover {
+  color: #fff;
+}
+
+.lab-pill-btn.active {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
+}
+
+.lab-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-icon-text {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  color: #e2e8f0;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-icon-text:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: #34d399;
+  color: #fff;
+}
+
+.btn-icon-text.exit {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.btn-icon-text.exit:hover {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: #ef4444;
+  color: #fff;
+}
+
+/* Explode Slider Control */
+.lab-explode-control {
+  position: absolute;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 480px;
+  max-width: 90%;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 16px 22px;
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.explode-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.explode-label strong {
+  color: #34d399;
+  font-size: 14px;
+}
+
+#explode-slider {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-full);
+  outline: none;
+  accent-color: #10b981;
+  cursor: pointer;
+}
+
+.explode-markers {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+/* Clue & Guide Card */
+.lab-clue-card {
+  position: absolute;
+  top: 156px;
+  left: 24px;
+  width: 300px;
+  max-width: calc(100vw - 48px);
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(0, 210, 255, 0.35);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  transition: all 0.3s ease;
+  z-index: 40;
+}
+
+.lab-clue-card.hidden {
+  display: none;
+}
+
+.clue-header {
+  margin-bottom: 6px;
+}
+
+.clue-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(0, 210, 255, 0.2);
+  color: var(--accent-cyan);
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.clue-header h4 {
+  font-size: 13px;
+  color: #fff;
+  font-weight: 700;
+}
+
+.lab-clue-card p {
+  font-size: 11.5px;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+.btn-snap-action {
+  width: 100%;
+  margin-top: 10px;
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  transition: all 0.2s ease;
+}
+
+.btn-snap-action:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.6);
+}
+
+/* Part Inventory Tray */
+.lab-parts-tray {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 94%;
+  max-width: 1100px;
+  background: rgba(15, 23, 42, 0.94);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: var(--radius-lg);
+  padding: 12px 18px;
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lab-parts-tray.hidden {
+  display: none;
+}
+
+.tray-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #34d399;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tray-items-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.tray-item-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.tray-item-card:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: #34d399;
+  transform: translateY(-2px);
+}
+
+.tray-item-card.selected {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: #10b981;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+.tray-item-card.placed {
+  opacity: 0.5;
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.06);
+  cursor: default;
+}
+
+.tray-item-card.placed::after {
+  content: '✓ Đã lắp';
+  font-size: 9px;
+  color: #10b981;
+  font-weight: 700;
+}
+
+.tray-item-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #fff;
+}
+
+.tray-item-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: #e2e8f0;
+  line-height: 1.2;
+}
+
+/* Victory Modal */
+.victory-card {
+  max-width: 500px;
+  text-align: center;
+  padding: 30px;
+  background: #0f172a;
+  border: 1px solid #10b981;
+  box-shadow: 0 0 35px rgba(16, 185, 129, 0.3);
+}
+
+.trophy-badge {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  color: #78350f;
+  font-size: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.6);
+  animation: heartPulse 1.5s infinite ease-in-out;
+}
+
+.victory-header h2 {
+  font-size: 20px;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.victory-header p {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-bottom: 20px;
+}
+
+.victory-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.v-sum-item {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.v-num {
+  font-size: 16px;
+  font-weight: 800;
+  color: #38bdf8;
+}
+
+.v-txt {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.victory-note {
+  font-size: 12px;
+  color: #e2e8f0;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.victory-footer {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
 /* Help Modal Grid */
 .help-card {
   max-width: 620px;
@@ -1329,6 +1823,45 @@ body:has(.info-drawer.open) .quick-nav {
 }
 
 /* ================= RESPONSIVE ================= */
+@media (max-width: 1300px) {
+  .top-nav {
+    padding: 0 14px;
+    gap: 8px;
+  }
+  .title-wrap h1 {
+    font-size: 13.5px;
+  }
+  .title-wrap .subtitle {
+    display: none;
+  }
+  .mode-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  .btn-pill {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+  .lab-top-bar {
+    top: 68px;
+    max-width: calc(100vw - 28px);
+    padding: 6px 12px;
+  }
+  .lab-title-text h3 {
+    font-size: 12.5px;
+  }
+  .lab-pill-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+  .lab-clue-card {
+    top: 154px;
+    left: 14px;
+    width: 270px;
+    padding: 10px 14px;
+  }
+}
+
 @media (max-width: 900px) {
   .top-nav {
     padding: 0 14px;

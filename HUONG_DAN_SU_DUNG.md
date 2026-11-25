@@ -44,7 +44,12 @@
      - Tích hợp tab **"Đối chiếu sơ đồ SGK"** giúp học sinh dễ dàng so sánh mô hình 3D với hình vẽ trong sách giáo khoa.
      - Nhấp vào từng thành phần để xoay 360°, phóng to/thu nhỏ và nghe giọng đọc thuyết minh chi tiết.
 
-7. **Đối chiếu Sơ đồ gốc SGK**:
+7. **Phòng Thực Hành Tự Tháo Lắp 3D (3D Assembly Lab)** 🧩:
+   - Nhấp nút **"Phòng Tháo Lắp 3D"** trên thanh tiêu đề:
+     - **Chế độ Bóc tách (Exploded View):** Kéo thanh trượt khoảng cách để phân rã mô hình ra không gian 3 chiều, quan sát rõ ràng mối liên kết giữa Tim và các mạch máu.
+     - **Thử thách Lắp ráp (Puzzle Challenge):** Toàn bộ 7 bộ phận sẽ biến mất và hiển thị dưới dạng khay thẻ linh kiện ở đáy màn hình. Học sinh chọn bộ phận và nhấp vào hình bóng khung lưới (Ghost wireframe) mục tiêu để lắp ghép vào đúng vị trí. Tích hợp âm thanh lắp ráp "Snap" chân thực và hiệu ứng chúc mừng khi hoàn thành 100%.
+
+8. **Đối chiếu Sơ đồ gốc SGK**:
    - Nút mở ảnh sơ đồ gốc sách giáo khoa để học sinh vừa học mô hình 3D vừa so sánh với hình vẽ trong sách.
 
 ---

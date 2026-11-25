@@ -45,6 +45,9 @@
 
     <!-- Header Actions -->
     <div class="header-actions">
+      <button id="btn-assembly-lab" class="btn-primary btn-lab" title="Phòng thực hành tự tháo lắp các bộ phận 3D">
+        <i class="fa-solid fa-puzzle-piece"></i> Phòng Tháo Lắp 3D
+      </button>
       <button id="btn-blood-comp" class="btn-primary" title="Khám phá các thành phần của máu">
         <i class="fa-solid fa-microscope"></i> Thành phần máu
       </button>
@@ -150,6 +153,9 @@
 
     <!-- Quick Navigation Pills on Canvas -->
     <div class="quick-nav">
+      <div class="quick-nav-pill lab-pill" id="quick-assembly-lab" title="Phòng thực hành tháo lắp 3D">
+        <i class="fa-solid fa-puzzle-piece" style="color: #00e676;"></i> Tháo lắp 3D
+      </div>
       <div class="quick-nav-pill special-comp-pill" id="quick-blood-comp" title="Khám phá các thành phần của máu">
         <i class="fa-solid fa-vial-virus" style="color: #ffb300;"></i> Thành phần máu
       </div>
@@ -173,6 +179,74 @@
       </div>
       <div class="quick-nav-pill" data-target="capillaries-body">
         <i class="fa-solid fa-network-wired"></i> Mao mạch cơ quan
+      </div>
+    </div>
+
+    <!-- Assembly Lab HUD (Hiển thị khi bật Phòng Tháo Lắp 3D) -->
+    <div id="assembly-lab-hud" class="assembly-lab-hud hidden">
+      <!-- Lab Top Controls Bar -->
+      <div class="lab-top-bar">
+        <div class="lab-title-area">
+          <div class="lab-icon-badge"><i class="fa-solid fa-puzzle-piece"></i></div>
+          <div class="lab-title-text">
+            <h3>Phòng Thực Hành Tháo Lắp Hệ Tuần Hoàn 3D</h3>
+            <span id="lab-progress-text">Tiến độ: Đã lắp 7 / 7 bộ phận</span>
+          </div>
+        </div>
+
+        <div class="lab-mode-pills">
+          <button class="lab-pill-btn active" id="btn-lab-mode-explode">
+            <i class="fa-solid fa-arrows-split-up-and-left"></i> Tháo rã trực quan (Slider)
+          </button>
+          <button class="lab-pill-btn" id="btn-lab-mode-puzzle">
+            <i class="fa-solid fa-cubes-stacked"></i> Thử thách Lắp ráp 3D
+          </button>
+        </div>
+
+        <div class="lab-actions">
+          <button id="btn-lab-auto-assemble" class="btn-icon-text" title="Tự động ráp nối toàn bộ mô hình">
+            <i class="fa-solid fa-magnet"></i> Ráp lại
+          </button>
+          <button id="btn-lab-disassemble-all" class="btn-icon-text" title="Tách rời toàn bộ các bộ phận">
+            <i class="fa-solid fa-burst"></i> Tháo rời
+          </button>
+          <button id="btn-lab-exit" class="btn-icon-text exit" title="Trở về chế độ mô phỏng bình thường">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i> Thoát
+          </button>
+        </div>
+      </div>
+
+      <!-- Explode Slider Bar (khi ở chế độ Tháo rã trực quan) -->
+      <div class="lab-explode-control" id="lab-explode-control">
+        <div class="explode-label">
+          <i class="fa-solid fa-sliders"></i> Khoảng cách tháo rã: <strong id="explode-val-txt">0%</strong>
+        </div>
+        <input type="range" id="explode-slider" min="0" max="100" value="0" step="1">
+        <div class="explode-markers">
+          <span>0% (Hoàn chỉnh)</span>
+          <span>50% (Tách rời)</span>
+          <span>100% (Tháo rã tối đa)</span>
+        </div>
+      </div>
+
+      <!-- Clue & Guide Box (khi ở chế độ Thử thách Lắp ráp) -->
+      <div class="lab-clue-card hidden" id="lab-clue-card">
+        <div class="clue-header">
+          <span class="clue-badge" id="clue-badge">GỢI Ý VỊ TRÍ</span>
+          <h4 id="clue-title">Chọn một bộ phận ở khay dưới để lắp vào mô hình</h4>
+        </div>
+        <p id="clue-desc">Hãy kéo hoặc nhấp vào một bộ phận trong khay linh kiện bên dưới, sau đó bấm vào vị trí tương ứng phát sáng trên mô hình 3D!</p>
+        <button id="btn-snap-active" class="btn-snap-action" title="Gắn bộ phận này vào đúng vị trí trên mô hình">
+          <i class="fa-solid fa-circle-check"></i> Lắp vào mô hình
+        </button>
+      </div>
+
+      <!-- Part Inventory Tray (Khay linh kiện khi ở chế độ Thử thách Lắp ráp) -->
+      <div class="lab-parts-tray hidden" id="lab-parts-tray">
+        <div class="tray-title"><i class="fa-solid fa-toolbox"></i> Khay bộ phận cần lắp ráp (Click chọn để lắp):</div>
+        <div class="tray-items-grid" id="tray-items-grid">
+          <!-- Rendered dynamically -->
+        </div>
       </div>
     </div>
   </main>
@@ -383,6 +457,42 @@
             <p>Nhấp vào bất kỳ đoạn mạch máu, mao mạch hoặc buồng tim để mở bảng thuyết minh kiến thức chuyên sâu.</p>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Victory Modal (Khi hoàn thành lắp ráp 7/7 bộ phận) -->
+  <div id="assembly-victory-modal" class="modal-backdrop hidden">
+    <div class="modal-card victory-card">
+      <div class="victory-header">
+        <div class="trophy-badge"><i class="fa-solid fa-trophy"></i></div>
+        <h2>XUẤT SẮC! HOÀN THÀNH LẮP RÁP 3D</h2>
+        <p>Em đã ghép nối thành công toàn bộ 7 bộ phận của Hệ Tuần Hoàn Máu Người!</p>
+      </div>
+      <div class="victory-body">
+        <div class="victory-summary">
+          <div class="v-sum-item">
+            <span class="v-num">7 / 7</span>
+            <span class="v-txt">Bộ phận chính xác</span>
+          </div>
+          <div class="v-sum-item">
+            <span class="v-num">100%</span>
+            <span class="v-txt">Độ chuẩn cấu tạo</span>
+          </div>
+          <div class="v-sum-item">
+            <span class="v-num" style="color: #00e676;"><i class="fa-solid fa-heart-pulse"></i> SỐNG</span>
+            <span class="v-txt">Máu bắt đầu lưu thông</span>
+          </div>
+        </div>
+        <p class="victory-note">Cơ tim đã bắt đầu co bóp nhịp nhàng và dòng tế bào máu đang tuần hoàn qua toàn bộ các mạch máu em vừa lắp ghép!</p>
+      </div>
+      <div class="victory-footer">
+        <button id="btn-victory-view" class="btn-primary">
+          <i class="fa-solid fa-eye"></i> Xem mô hình hoạt động
+        </button>
+        <button id="btn-victory-replay" class="btn-icon-text">
+          <i class="fa-solid fa-rotate-left"></i> Tháo ra lắp lại
+        </button>
       </div>
     </div>
   </div>
