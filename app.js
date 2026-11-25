@@ -1444,6 +1444,7 @@ const COMPONENT_SPEECH = {
 };
 
 function speakText(text) {
+  if (typeof labState !== 'undefined' && labState.active) return; // Không đọc nội dung khi ở trong phòng tháo lắp
   if (!('speechSynthesis' in window)) return;
   stopSpeaking();
   const utterance = new SpeechSynthesisUtterance(text);
@@ -2162,10 +2163,6 @@ function enterAssemblyLab() {
 
   // Mặc định ban đầu vào chế độ Thử thách Lắp ráp 3D
   setLabMode('puzzle');
-
-  if (state.voiceEnabled) {
-    speakText('Chào mừng các em đến với Phòng thực hành tháo lắp 3D Hệ tuần hoàn máu!');
-  }
 }
 
 function exitAssemblyLab() {
@@ -2549,10 +2546,6 @@ function selectTrayPart(partId) {
       setGhostHighlight(p.ghost, p.color, 0.25);
     }
   });
-
-  if (state.voiceEnabled) {
-    speakText(`${part.name}. ${part.clue}`);
-  }
 }
 
 function snapPartIntoSlot(partId, slotId) {
@@ -2602,9 +2595,6 @@ function snapPartIntoSlot(partId, slotId) {
   playSnapSound();
   if (!part.isCorrect) {
     showLabAlert(`⚠️ <strong>${part.name}</strong> đã lắp nhưng <strong>sai vị trí giải phẫu</strong>!<br>Dòng máu không thể chảy qua đây. Em hãy kéo đổi lại đúng vị trí.`);
-    if (state.voiceEnabled) {
-      speakText(`${part.name} lắp chưa đúng vị trí giải phẫu, máu không thể lưu thông.`);
-    }
   }
 
   // Cập nhật tiến độ
@@ -2688,10 +2678,6 @@ function onAssemblyComplete() {
   playVictorySound();
   const vicModal = document.getElementById('assembly-victory-modal');
   if (vicModal) vicModal.classList.remove('hidden');
-
-  if (state.voiceEnabled) {
-    speakText('Chúc mừng em đã xuất sắc hoàn thành việc lắp ráp toàn bộ 7 bộ phận của Hệ Tuần Hoàn Máu Người!');
-  }
 }
 
 let _justDragged3D = false;
