@@ -56,10 +56,11 @@ body {
   left: 0;
   right: 0;
   height: 64px;
-  padding: 0 24px;
+  padding: 0 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   background: linear-gradient(180deg, rgba(10, 14, 23, 0.95) 0%, rgba(10, 14, 23, 0.7) 80%, transparent 100%);
   backdrop-filter: blur(10px);
   z-index: 50;
@@ -121,6 +122,42 @@ body {
   font-weight: 400;
 }
 
+.school-author-badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.2;
+}
+
+.school-author-badge .badge-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.school-author-badge .badge-item.school {
+  color: #38bdf8;
+  font-weight: 500;
+}
+
+.school-author-badge .badge-item.teacher {
+  color: #fbbf24;
+  font-weight: 500;
+}
+
+.school-author-badge .badge-item.teacher strong {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.school-author-badge .badge-dot {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 9px;
+}
+
 /* Mode selector */
 .mode-selector {
   display: flex;
@@ -165,7 +202,8 @@ body {
 .header-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
 .btn-icon {
@@ -372,6 +410,36 @@ body {
   align-items: center;
   gap: 6px;
   line-height: 1.3;
+}
+
+.legend-author {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.legend-author .author-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-author .author-row.school {
+  color: #38bdf8;
+  font-weight: 500;
+}
+
+.legend-author .author-row.teacher {
+  color: #cbd5e1;
+}
+
+.legend-author .author-row.teacher strong {
+  color: #fbbf24;
+  font-weight: 600;
 }
 
 /* ================= FLOATING CONTROLS ================= */
@@ -1407,6 +1475,33 @@ body.in-lab-mode .floating-controls {
   white-space: nowrap;
 }
 
+.lab-sub-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.lab-teacher-tag {
+  color: #38bdf8 !important;
+  font-weight: 500 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lab-teacher-tag strong {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.lab-sub-meta .meta-sep {
+  color: rgba(255, 255, 255, 0.25);
+  font-size: 9px;
+}
+
 .lab-mode-pills {
   display: flex;
   background: rgba(0, 0, 0, 0.35);
@@ -2025,13 +2120,76 @@ body.in-lab-mode .floating-controls {
   margin-bottom: 24px;
 }
 
+.victory-credits {
+  font-size: 12px;
+  color: #38bdf8;
+  margin-top: 10px;
+  margin-bottom: 20px;
+  font-weight: 500;
+  text-align: center;
+}
+
 .victory-footer {
   display: flex;
   justify-content: center;
   gap: 12px;
 }
 
-/* Help Modal Grid */
+/* Help Modal Grid & Author Credits Banner */
+.author-credits-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.85), rgba(15, 23, 42, 0.95));
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: var(--radius-md);
+  padding: 12px 18px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.author-credits-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0284c7, #0369a1);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  box-shadow: 0 0 14px rgba(2, 132, 199, 0.45);
+}
+
+.author-credits-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.author-credits-info .credits-school {
+  font-size: 14px;
+  color: #38bdf8;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.author-credits-info .credits-teacher {
+  font-size: 13.5px;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.author-credits-info .credits-teacher strong {
+  color: #fbbf24;
+  font-weight: 700;
+}
+
 .help-card {
   max-width: 620px;
 }
@@ -2070,8 +2228,8 @@ body.in-lab-mode .floating-controls {
 /* ================= RESPONSIVE ================= */
 @media (max-width: 1300px) {
   .top-nav {
-    padding: 0 14px;
-    gap: 8px;
+    padding: 0 12px;
+    gap: 6px;
   }
   .title-wrap h1 {
     font-size: 13.5px;
@@ -2079,9 +2237,26 @@ body.in-lab-mode .floating-controls {
   .title-wrap .subtitle {
     display: none;
   }
+  .school-author-badge {
+    font-size: 9.5px;
+    gap: 5px;
+  }
   .mode-btn {
-    padding: 4px 8px;
+    padding: 4px 7px;
+    font-size: 10.5px;
+  }
+  .header-actions {
+    gap: 4px;
+  }
+  .header-actions .btn-primary {
+    padding: 5px 8px;
     font-size: 11px;
+    gap: 4px;
+  }
+  .header-actions .btn-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
   }
   .btn-pill {
     padding: 5px 10px;
@@ -2112,6 +2287,9 @@ body.in-lab-mode .floating-controls {
     padding: 0 14px;
   }
   .title-wrap .subtitle {
+    display: none;
+  }
+  .school-author-badge .badge-item.school {
     display: none;
   }
   .mode-selector {
